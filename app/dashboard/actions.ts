@@ -32,7 +32,8 @@ export async function claimTag(tagId: string) {
     .single()
 
   if (fetchError || !tag) {
-    return { error: `Tag dengan ID "${cleanId}" tidak ditemukan dalam sistem.` }
+    console.error('Fetch error:', fetchError)
+    return { error: `Tag dengan ID "${cleanId}" tidak ditemukan dalam sistem. Detail: ${fetchError?.message || 'Not found'}` }
   }
 
   const tagRow = tag as TagRow
