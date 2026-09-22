@@ -55,7 +55,7 @@ export function SocialView({ metadata }: SocialViewProps) {
         {/* Profile Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold leading-tight text-gray-900">
-            {name || 'Pengguna Verto'}
+            {name || 'Verto User'}
           </h1>
           <div className="w-8 border-b border-indigo-600 mx-auto mt-2 mb-3" />
           {bio && (

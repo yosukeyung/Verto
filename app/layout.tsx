@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Verto",
-  description: "Multipurpose Smart Tag Platform",
+  description: "Multipurpose Smart NFC Tag Platform",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`${inter.variable} ${geistMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${geistMono.variable}`}>
       <body className="antialiased bg-white text-gray-900 font-sans min-h-screen">
         {children}
       </body>

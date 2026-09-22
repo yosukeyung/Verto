@@ -28,7 +28,7 @@ function LoginForm() {
     })
 
     if (signInError) {
-      setError('Email atau kata sandi salah. Silakan coba lagi.')
+      setError('Invalid email or password. Please try again.')
       setLoading(false)
       return
     }
@@ -49,7 +49,7 @@ function LoginForm() {
         <div className="w-full max-w-md mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-bold leading-tight text-gray-900">
-              Masuk ke Dashboard
+              Sign In to Dashboard
             </h1>
             <div className="w-8 border-b border-indigo-600 mt-2 mb-3" />
             {tagId && (
@@ -85,7 +85,7 @@ function LoginForm() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
+                placeholder="name@email.com"
                 className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
               />
             </div>
@@ -95,7 +95,7 @@ function LoginForm() {
                 htmlFor="password" 
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Kata Sandi
+                Password
               </label>
               <input
                 id="password"
@@ -118,10 +118,10 @@ function LoginForm() {
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.75} />
-                    <span>Memproses...</span>
+                    <span>Signing in...</span>
                   </>
                 ) : (
-                  <span>Masuk</span>
+                  <span>Sign In</span>
                 )}
               </button>
             </div>

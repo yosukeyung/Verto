@@ -11,12 +11,12 @@ function formatUrlLabel(url: string): string {
     const parsed = new URL(url.startsWith('http') ? url : `https://${url}`)
     return parsed.hostname.replace(/^www\./, '')
   } catch {
-    return 'Kunjungi Tautan'
+    return 'Visit Link'
   }
 }
 
 export function EventHubView({ metadata }: EventHubViewProps) {
-  const { title = 'Informasi Acara', description = '', link_1, link_2, link_3 } = metadata
+  const { title = 'Event Information', description = '', link_1, link_2, link_3 } = metadata
 
   const links = [link_1, link_2, link_3].filter(Boolean) as string[]
 

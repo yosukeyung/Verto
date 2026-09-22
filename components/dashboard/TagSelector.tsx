@@ -12,7 +12,7 @@ export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorPro
     return (
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-          Tag Aktif:
+          Active Tag:
         </span>
         <span className="px-3 py-1 rounded-md border border-indigo-600 bg-indigo-50 text-sm font-mono font-medium text-indigo-600">
           {selectedTagId}
@@ -24,11 +24,11 @@ export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorPro
   return (
     <div className="w-full">
       <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-        Pilih Tag ({tags.length})
+        Select Tag ({tags.length})
       </div>
       <div 
         role="tablist"
-        aria-label="Daftar Tag NFC"
+        aria-label="NFC Tag List"
         className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide"
       >
         {tags.map((tag) => {

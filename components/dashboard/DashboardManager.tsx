@@ -79,7 +79,7 @@ export function DashboardManager({
       )
     )
 
-    setToast({ type: 'success', message: 'Pengaturan tag berhasil disimpan.' })
+    setToast({ type: 'success', message: 'Tag settings saved successfully.' })
     setIsSaving(false)
   }
 
@@ -99,8 +99,8 @@ export function DashboardManager({
             <form action={signOutAction}>
               <button
                 type="submit"
-                aria-label="Keluar"
-                title="Keluar dari Akun"
+                aria-label="Sign Out"
+                title="Sign out of account"
                 className="p-2 text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
                 <LogOut className="w-5 h-5" strokeWidth={1.75} />
@@ -126,10 +126,10 @@ export function DashboardManager({
               <Radio className="w-6 h-6" strokeWidth={1.75} />
             </div>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              Belum ada tag yang terhubung
+              No tags connected yet
             </h2>
             <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
-              Belum ada tag. Tap tag NFC untuk memulai pendaftaran atau hubungi admin.
+              You have not claimed any tags yet. Tap an NFC tag to start registration, or contact support.
             </p>
           </Card>
         ) : (
@@ -144,7 +144,7 @@ export function DashboardManager({
             {/* Public Link Preview Quick-Action */}
             <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 border border-gray-200">
               <div className="flex items-center gap-2 text-xs font-mono text-gray-600">
-                <span>Tautan Publik:</span>
+                <span>Public URL:</span>
                 <span className="font-semibold text-gray-900">/t/{selectedTagId}</span>
               </div>
               <a
@@ -153,7 +153,7 @@ export function DashboardManager({
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:underline"
               >
-                <span>Buka Tampilan</span>
+                <span>Open View</span>
                 <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.75} />
               </a>
             </div>
@@ -170,7 +170,7 @@ export function DashboardManager({
 
               <div className="pt-2 border-t border-gray-200">
                 <div className="text-sm font-semibold text-gray-900 mb-4">
-                  Pengaturan Data {activeMode === 'social' ? 'Profil' : activeMode === 'lost_and_found' ? 'Barang Hilang' : 'Acara'}
+                  {activeMode === 'social' ? 'Social Profile Settings' : activeMode === 'lost_and_found' ? 'Lost & Found Settings' : 'Event Settings'}
                 </div>
 
                 <ModeFormDispatcher
@@ -197,7 +197,7 @@ export function DashboardManager({
                   isLoading={isSaving}
                   className="w-full"
                 >
-                  Simpan Pengaturan
+                  Save Settings
                 </Button>
               </div>
             </form>

@@ -25,12 +25,12 @@ function RegisterForm() {
     setNotice(null)
 
     if (password !== confirmPassword) {
-      setError('Konfirmasi kata sandi tidak cocok.')
+      setError('Passwords do not match.')
       return
     }
 
     if (password.length < 6) {
-      setError('Kata sandi minimal 6 karakter.')
+      setError('Password must be at least 6 characters.')
       return
     }
 
@@ -53,7 +53,7 @@ function RegisterForm() {
       router.push(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`)
       router.refresh()
     } else {
-      setNotice('Pendaftaran berhasil. Silakan periksa email Anda untuk verifikasi akun.')
+      setNotice('Registration successful. Please check your email to verify your account.')
       setLoading(false)
     }
   }
@@ -66,7 +66,7 @@ function RegisterForm() {
         <div className="w-full max-w-md mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-bold leading-tight text-gray-900">
-              Daftarkan Tag Anda
+              Register Your Tag
             </h1>
             <div className="w-8 border-b border-indigo-600 mt-2 mb-3" />
             {tagId && (
@@ -111,7 +111,7 @@ function RegisterForm() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
+                placeholder="name@email.com"
                 className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
               />
             </div>
@@ -121,7 +121,7 @@ function RegisterForm() {
                 htmlFor="password" 
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Kata Sandi
+                Password
               </label>
               <input
                 id="password"
@@ -131,7 +131,7 @@ function RegisterForm() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimal 6 karakter"
+                placeholder="At least 6 characters"
                 className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
               />
             </div>
@@ -141,7 +141,7 @@ function RegisterForm() {
                 htmlFor="confirmPassword" 
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Konfirmasi Kata Sandi
+                Confirm Password
               </label>
               <input
                 id="confirmPassword"
@@ -151,7 +151,7 @@ function RegisterForm() {
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ulangi kata sandi"
+                placeholder="Repeat password"
                 className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
               />
             </div>
@@ -165,22 +165,22 @@ function RegisterForm() {
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.75} />
-                    <span>Memproses...</span>
+                    <span>Creating account...</span>
                   </>
                 ) : (
-                  <span>Buat Akun</span>
+                  <span>Create Account</span>
                 )}
               </button>
             </div>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            Sudah punya akun?{' '}
+            Already have an account?{' '}
             <Link 
               href={tagId ? `/login?tag_id=${encodeURIComponent(tagId)}` : '/login'} 
               className="text-indigo-600 hover:underline font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded"
             >
-              Masuk
+              Sign In
             </Link>
           </p>
         </div>

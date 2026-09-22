@@ -8,18 +8,18 @@ import type { ActiveMode, TagRow } from '@/types/database'
 export async function claimTag(tagId: string) {
   const cleanId = tagId.trim()
   if (!cleanId) {
-    return { error: 'ID tag tidak valid.' }
+    return { error: 'Invalid tag ID.' }
   }
 
   if (cleanId === '000') {
-    return { error: 'Tag 000 adalah tag reservasi Super Admin.' }
+    return { error: 'Tag 000 is reserved for Super Admin.' }
   }
 
   const supabaseUser = await createClient()
   const { data: { user }, error: authError } = await supabaseUser.auth.getUser()
 
   if (authError || !user) {
-    return { error: 'Sesi telah berakhir. Silakan masuk kembali.' }
+    return { error: 'Session expired. Please sign in again.' }
   }
 
   // Service client needed because unclaimed tags have owner_id = null (bypasses RLS)
@@ -33,13 +33,13 @@ export async function claimTag(tagId: string) {
 
   if (fetchError || !tag) {
     console.error('Fetch error:', fetchError)
-    return { error: `Tag dengan ID "${cleanId}" tidak ditemukan dalam sistem. Detail: ${fetchError?.message || 'Not found'}` }
+    return { error: `Tag with ID "${cleanId}" was not found in the system. Detail: ${fetchError?.message || 'Not found'}` }
   }
 
   const tagRow = tag as TagRow
 
   if (tagRow.owner_id && tagRow.owner_id !== user.id) {
-    return { error: 'Tag ini sudah didaftarkan oleh akun lain.' }
+    return { error: 'This tag has already been registered by another account.' }
   }
 
   const { error: updateError } = await (serviceClient.from('tags') as any)
@@ -50,7 +50,7 @@ export async function claimTag(tagId: string) {
     .eq('tag_id', cleanId)
 
   if (updateError) {
-    return { error: 'Gagal mengklaim tag: ' + updateError.message }
+    return { error: 'Failed to claim tag: ' + updateError.message }
   }
 
   revalidatePath('/dashboard')
@@ -66,21 +66,21 @@ export async function saveTagSettings(
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user) {
-    return { error: 'Sesi telah berakhir. Silakan masuk kembali.' }
+    return { error: 'Session expired. Please sign in again.' }
   }
 
   // Validation according to mode
   if (activeMode === 'social') {
     if (!metadata.name?.trim()) {
-      return { error: 'Nama Lengkap wajib diisi pada Social Mode.' }
+      return { error: 'Full Name is required for Social Mode.' }
     }
   } else if (activeMode === 'lost_and_found') {
     if (!metadata.item_name?.trim() || !metadata.owner_name?.trim() || !metadata.wa_number?.trim()) {
-      return { error: 'Nama Barang, Nama Pemilik, dan Nomor WhatsApp wajib diisi.' }
+      return { error: 'Item Name, Owner Name, and WhatsApp Number are required.' }
     }
   } else if (activeMode === 'event_hub') {
     if (!metadata.title?.trim() || !metadata.description?.trim()) {
-      return { error: 'Judul dan Deskripsi Acara wajib diisi.' }
+      return { error: 'Event Title and Description are required.' }
     }
   }
 
@@ -94,7 +94,7 @@ export async function saveTagSettings(
     .eq('owner_id', user.id)
 
   if (updateError) {
-    return { error: 'Gagal menyimpan pengaturan: ' + updateError.message }
+    return { error: 'Failed to save settings: ' + updateError.message }
   }
 
   revalidatePath('/dashboard')

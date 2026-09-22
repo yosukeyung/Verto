@@ -10,17 +10,17 @@ const MODES: { id: ActiveMode; title: string; description: string }[] = [
   {
     id: 'social',
     title: 'Social Mode',
-    description: 'Tampilkan profil publik untuk networking dan media sosial',
+    description: 'Display a public profile for networking and social links',
   },
   {
     id: 'lost_and_found',
     title: 'Lost & Found',
-    description: 'Halaman kontak barang hilang dengan proteksi identitas',
+    description: 'Contact page for lost belongings with direct contact option',
   },
   {
     id: 'event_hub',
     title: 'Event Hub',
-    description: 'Landing page acara kampus, organisasi, dan informasi kegiatan',
+    description: 'Landing page for events, forms, and announcements',
   },
 ]
 
@@ -28,9 +28,9 @@ export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
   return (
     <div className="space-y-3">
       <div className="text-sm font-semibold text-gray-900 mb-1">
-        Mode Aktif Tag
+        Active Tag Mode
       </div>
-      <div role="radiogroup" aria-label="Pilih Mode Tag" className="space-y-2">
+      <div role="radiogroup" aria-label="Select Tag Mode" className="space-y-2">
         {MODES.map((mode) => {
           const isSelected = activeMode === mode.id
           return (

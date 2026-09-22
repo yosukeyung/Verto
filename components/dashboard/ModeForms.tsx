@@ -17,38 +17,38 @@ export function SocialForm({ data, onChange }: SocialFormProps) {
     <div className="space-y-4">
       <Input
         id="social-name"
-        label="Nama Lengkap"
+        label="Full Name"
         required
         value={data.name || ''}
         onChange={(e) => onChange({ ...data, name: e.target.value })}
-        placeholder="Nama Anda"
+        placeholder="Your Name"
       />
       <Input
         id="social-bio"
-        label="Bio / Keterangan"
+        label="Bio / Headline"
         value={data.bio || ''}
         onChange={(e) => onChange({ ...data, bio: e.target.value })}
-        placeholder="Mahasiswa Ilmu Komputer / Designer"
+        placeholder="Software Engineer / Designer"
       />
       <Input
         id="social-wa"
-        label="Nomor WhatsApp"
+        label="WhatsApp Number"
         value={data.wa || ''}
         onChange={(e) => onChange({ ...data, wa: e.target.value })}
         placeholder="6281234567890"
-        helperText="Gunakan kode negara tanpa +, contoh: 6281234567890"
+        helperText="Include country code without +, e.g. 6281234567890"
       />
       <Input
         id="social-ig"
-        label="Username Instagram"
+        label="Instagram Username"
         value={data.ig || ''}
         onChange={(e) => onChange({ ...data, ig: e.target.value.replace(/^@/, '') })}
         placeholder="username"
-        helperText="Masukkan username tanpa tanda @"
+        helperText="Enter username without the @ symbol"
       />
       <Input
         id="social-linkedin"
-        label="Tautan LinkedIn"
+        label="LinkedIn URL"
         type="url"
         value={data.linkedin || ''}
         onChange={(e) => onChange({ ...data, linkedin: e.target.value })}
@@ -68,29 +68,29 @@ export function LostAndFoundForm({ data, onChange }: LostAndFoundFormProps) {
     <div className="space-y-4">
       <Input
         id="lf-item-name"
-        label="Nama Barang"
+        label="Item Name"
         required
         value={data.item_name || ''}
         onChange={(e) => onChange({ ...data, item_name: e.target.value })}
-        placeholder="Contoh: Kunci Motor Vario / Dompet Kulit Cokelat"
-        helperText="Barang fisik yang dipasangi tag NFC ini"
+        placeholder="e.g. Motorcycle Keys / Brown Leather Wallet"
+        helperText="Physical item attached to this NFC tag"
       />
       <Input
         id="lf-owner-name"
-        label="Nama Pemilik"
+        label="Owner Name"
         required
         value={data.owner_name || ''}
         onChange={(e) => onChange({ ...data, owner_name: e.target.value })}
-        placeholder="Nama pemilik barang"
+        placeholder="Owner's Name"
       />
       <Input
         id="lf-wa-number"
-        label="Nomor WhatsApp Pemilik"
+        label="Owner WhatsApp Number"
         required
         value={data.wa_number || ''}
         onChange={(e) => onChange({ ...data, wa_number: e.target.value })}
         placeholder="6281234567890"
-        helperText="Nomor yang dihubungi finder saat menekan tombol WhatsApp"
+        helperText="Phone number contacted when the finder taps WhatsApp button"
       />
     </div>
   )
@@ -106,32 +106,32 @@ export function EventHubForm({ data, onChange }: EventHubFormProps) {
     <div className="space-y-4">
       <Input
         id="event-title"
-        label="Judul Acara"
+        label="Event Title"
         required
         value={data.title || ''}
         onChange={(e) => onChange({ ...data, title: e.target.value })}
-        placeholder="Contoh: Seminar Nasional Teknologi 2026"
+        placeholder="e.g. National Technology Symposium 2026"
       />
       <Input
         id="event-description"
-        label="Deskripsi Acara"
+        label="Event Description"
         required
         value={data.description || ''}
         onChange={(e) => onChange({ ...data, description: e.target.value })}
-        placeholder="Waktu, lokasi, dan penjelasan singkat acara"
+        placeholder="Time, location, and brief summary of the event"
       />
       <Input
         id="event-link-1"
-        label="Tautan 1"
+        label="Link 1"
         type="url"
         value={data.link_1 || ''}
         onChange={(e) => onChange({ ...data, link_1: e.target.value })}
         placeholder="https://..."
-        helperText="Label tombol akan otomatis diambil dari hostname link"
+        helperText="Button label is automatically derived from the link hostname"
       />
       <Input
         id="event-link-2"
-        label="Tautan 2"
+        label="Link 2"
         type="url"
         value={data.link_2 || ''}
         onChange={(e) => onChange({ ...data, link_2: e.target.value })}
@@ -139,7 +139,7 @@ export function EventHubForm({ data, onChange }: EventHubFormProps) {
       />
       <Input
         id="event-link-3"
-        label="Tautan 3"
+        label="Link 3"
         type="url"
         value={data.link_3 || ''}
         onChange={(e) => onChange({ ...data, link_3: e.target.value })}
