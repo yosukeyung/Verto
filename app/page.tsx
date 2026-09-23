@@ -8,7 +8,7 @@ export default function HomePage() {
     encodeURIComponent('Hello Verto, I would like to order an NFC tag.')
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-between overflow-x-hidden">
+    <div className="min-h-screen bg-white flex flex-col justify-between overflow-x-clip">
       {/* 56px Navigation Header */}
       <Navbar
         rightAction={
