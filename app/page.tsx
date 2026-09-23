@@ -26,11 +26,13 @@ export default function HomePage() {
         {/* Hero Section */}
         <section className="text-center space-y-4">
           <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900">
-            One NFC Tag for Every Need
+            One Tap.
+            <br />
+            Infinite Possibilities.
           </h1>
           <div className="w-8 border-b border-indigo-600 mx-auto" />
           <p className="text-base text-gray-500 leading-normal max-w-sm mx-auto">
-            Update the destination and function of your physical tag anytime through the web dashboard, without reprogramming the chip.
+            Share your professional profile, secure your belongings, and manage events with a single tap. No app required.
           </p>
 
           <div className="pt-2">
@@ -118,6 +120,24 @@ export default function HomePage() {
                 Share event details, registration forms, and announcements in one place.
               </p>
             </div>
+          </div>
+        </section>
+
+        {/* Getting Started Guide CTA */}
+        <section className="text-center space-y-3 pt-6 border-t border-gray-100">
+          <h2 className="text-lg font-semibold leading-tight text-gray-900">
+            Ready to digitalize your campus life?
+          </h2>
+          <p className="text-sm text-gray-500 max-w-sm mx-auto">
+            See exactly how easy it is to set up your Verto tag in under 2 minutes.
+          </p>
+          <div className="pt-1">
+            <Link
+              href="/guide"
+              className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            >
+              Read the Step-by-Step Guide
+            </Link>
           </div>
         </section>
       </main>
