@@ -14,7 +14,7 @@ export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorPro
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
           Active Tag:
         </span>
-        <span className="px-3 py-1 rounded-md border border-indigo-600 bg-indigo-50 text-sm font-mono font-medium text-indigo-600">
+        <span className="px-3 py-1 rounded-md border border-orange-500 bg-orange-50 text-sm font-mono font-medium text-orange-600">
           {selectedTagId}
         </span>
       </div>
@@ -40,9 +40,9 @@ export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorPro
               role="tab"
               aria-selected={isActive}
               onClick={() => onSelectTag(tag.tag_id)}
-              className={`px-3 py-2 rounded-lg text-sm font-mono font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+              className={`px-3 py-2 rounded-lg text-sm font-mono font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
                 isActive
-                  ? 'border border-indigo-600 bg-indigo-50 text-indigo-600'
+                  ? 'border border-orange-500 bg-orange-50 text-orange-600'
                   : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300'
               }`}
             >

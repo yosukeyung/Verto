@@ -25,13 +25,13 @@ export function EventHubView({ metadata }: EventHubViewProps) {
       <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center text-center">
         {/* Header */}
         <div className="mb-8">
-          <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto mb-4 text-indigo-600">
+          <div className="w-12 h-12 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center mx-auto mb-4 text-orange-500">
             <Calendar className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <h1 className="text-2xl font-bold leading-tight text-gray-900">
             {title}
           </h1>
-          <div className="w-8 border-b border-indigo-600 mx-auto mt-2 mb-3" />
+          <div className="w-8 border-b border-orange-500 mx-auto mt-2 mb-3" />
           {description && (
             <p className="text-base text-gray-600 leading-normal max-w-xs mx-auto">
               {description}
@@ -52,7 +52,7 @@ export function EventHubView({ metadata }: EventHubViewProps) {
                   href={fullUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                  className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
                 >
                   <span className="truncate">{label}</span>
                   <ExternalLink className="w-4 h-4 text-gray-400 shrink-0 ml-2" strokeWidth={1.75} />

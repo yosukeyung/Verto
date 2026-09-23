@@ -32,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           className={`w-full h-11 px-3 rounded-lg border text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 ${
             error
               ? 'border-red-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500'
-              : 'border-gray-200 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600'
+              : 'border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500'
           } disabled:bg-gray-50 disabled:text-gray-400 ${className}`.trim()}
           {...props}
         />

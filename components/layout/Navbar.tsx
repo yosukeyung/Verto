@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface NavbarProps {
   rightAction?: React.ReactNode
@@ -10,9 +11,16 @@ export function Navbar({ rightAction }: NavbarProps) {
       <div className="max-w-2xl mx-auto h-full px-4 flex items-center justify-between">
         <Link 
           href="/" 
-          className="text-lg font-bold tracking-tight text-gray-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 rounded"
+          className="flex items-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 rounded"
         >
-          Verto
+          <Image
+            src="/logo.png"
+            alt="Verto"
+            width={120}
+            height={38}
+            className="h-9 w-auto object-contain"
+            priority
+          />
         </Link>
         {rightAction ? (
           <div>{rightAction}</div>

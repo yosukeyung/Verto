@@ -57,7 +57,7 @@ export function SocialView({ metadata }: SocialViewProps) {
           <h1 className="text-2xl font-bold leading-tight text-gray-900">
             {name || 'Verto User'}
           </h1>
-          <div className="w-8 border-b border-indigo-600 mx-auto mt-2 mb-3" />
+          <div className="w-8 border-b border-orange-500 mx-auto mt-2 mb-3" />
           {bio && (
             <p className="text-base text-gray-500 leading-normal max-w-xs mx-auto">
               {bio}
@@ -72,7 +72,7 @@ export function SocialView({ metadata }: SocialViewProps) {
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
             >
               <div className="flex items-center gap-3">
                 <MessageCircle className="w-5 h-5 text-green-600 shrink-0" strokeWidth={1.75} />
@@ -87,7 +87,7 @@ export function SocialView({ metadata }: SocialViewProps) {
               href={igUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
             >
               <div className="flex items-center gap-3">
                 <InstagramIcon className="w-5 h-5 text-pink-600 shrink-0" />
@@ -102,10 +102,10 @@ export function SocialView({ metadata }: SocialViewProps) {
               href={linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
             >
               <div className="flex items-center gap-3">
-                <LinkedinIcon className="w-5 h-5 text-indigo-600 shrink-0" />
+                <LinkedinIcon className="w-5 h-5 text-blue-700 shrink-0" />
                 <span>LinkedIn</span>
               </div>
               <ExternalLink className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.75} />

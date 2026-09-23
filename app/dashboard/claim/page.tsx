@@ -40,7 +40,7 @@ function ClaimForm() {
     return (
       <div className="text-center py-12">
         <p className="text-sm text-gray-500 mb-4">No Tag ID was provided in the request.</p>
-        <Link href="/dashboard" className="text-sm text-indigo-600 font-medium hover:underline">
+        <Link href="/dashboard" className="text-sm text-orange-600 font-medium hover:underline">
           Return to Dashboard
         </Link>
       </div>
@@ -50,13 +50,13 @@ function ClaimForm() {
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="mb-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center mx-auto mb-4 text-indigo-600">
+        <div className="w-12 h-12 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center mx-auto mb-4 text-orange-500">
           <Tag className="w-6 h-6" strokeWidth={1.75} />
         </div>
         <h1 className="text-2xl font-bold leading-tight text-gray-900">
           Claim NFC Tag
         </h1>
-        <div className="w-8 border-b border-indigo-600 mx-auto mt-2 mb-4" />
+        <div className="w-8 border-b border-orange-500 mx-auto mt-2 mb-4" />
         <p className="text-sm text-gray-500">
           Link this physical tag to your account to manage its profile and links.
         </p>

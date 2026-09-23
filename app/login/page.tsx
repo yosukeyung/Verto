@@ -51,7 +51,7 @@ function LoginForm() {
             <h1 className="text-2xl font-bold leading-tight text-gray-900">
               Sign In to Dashboard
             </h1>
-            <div className="w-8 border-b border-indigo-600 mt-2 mb-3" />
+            <div className="w-8 border-b border-orange-500 mt-2 mb-3" />
             {tagId && (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-sm font-mono font-medium">
                 <span>Tag ID:</span>
@@ -86,7 +86,7 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@email.com"
-                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
@@ -105,7 +105,7 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
@@ -113,7 +113,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 px-5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full h-11 px-5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

@@ -21,11 +21,11 @@
   --gray-950: #0A0A0A;
   --black: #000000;
 
-  --indigo-50: #EEF2FF;
-  --indigo-100: #E0E7FF;
-  --indigo-500: #6366F1;
-  --indigo-600: #4F46E5;
-  --indigo-700: #4338CA;
+  --orange-50:      #FFF7ED;
+  --orange-100:     #FFEDD5;
+  --orange-500:     #F97316;
+  --orange-600:     #EA580C;
+  --orange-700:     #C2410C;
 
   --red-500: #EF4444;
   --red-50: #FEF2F2;
@@ -97,10 +97,10 @@
   --color-border-strong: var(--gray-300);
 
   /* ---- ACCENT ---- */
-  --color-accent: var(--indigo-600);
-  --color-accent-hover: var(--indigo-700);
-  --color-accent-subtle: var(--indigo-50);
-  --color-accent-text: var(--indigo-600);
+  --color-accent: var(--orange-500);
+  --color-accent-hover: var(--orange-600);
+  --color-accent-subtle: var(--orange-50);
+  --color-accent-text: var(--orange-600);
 
   /* ---- SEMANTIC STATUS ---- */
   --color-error: var(--red-500);
@@ -172,7 +172,7 @@
   }
 
   .accent-line {
-    border-bottom: 1px solid var(--indigo-600);
+    border-bottom: 1px solid var(--orange-500);
   }
 }
 

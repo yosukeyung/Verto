@@ -27,7 +27,7 @@ export function LostFoundView({ metadata }: LostFoundViewProps) {
           <h1 className="text-2xl font-bold leading-tight text-gray-900">
             {item_name}
           </h1>
-          <div className="w-8 border-b border-indigo-600 mx-auto mt-2 mb-3" />
+          <div className="w-8 border-b border-orange-500 mx-auto mt-2 mb-3" />
           <p className="text-base text-gray-600">
             Owner: <span className="font-semibold text-gray-900">{owner_name}</span>
           </p>
@@ -42,7 +42,7 @@ export function LostFoundView({ metadata }: LostFoundViewProps) {
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full h-11 px-5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors duration-150 inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 shadow-sm"
+            className="w-full h-11 px-5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors duration-150 inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 shadow-sm"
           >
             <MessageCircle className="w-5 h-5 shrink-0" strokeWidth={1.75} />
             <span>Contact Owner via WhatsApp</span>

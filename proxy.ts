@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@/lib/supabase/middleware'
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import type { Database, TagRow } from '@/types/database'
 
 export async function proxy(request: NextRequest) {
@@ -17,15 +18,10 @@ export async function proxy(request: NextRequest) {
 
     // Service-role client: bypasses RLS for unauthenticated NFC taps.
     // READ-ONLY here — no writes performed.
-    const supabase = createServerClient<Database>(
+    // Must use supabase-js createClient to avoid injecting cookies which overrides service role.
+    const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll: () => request.cookies.getAll(),
-          setAll: () => {},
-        },
-      }
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
     const { data, error } = await supabase

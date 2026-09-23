@@ -28,9 +28,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        'bg-indigo-600 hover:bg-indigo-700 text-white focus-visible:outline-indigo-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed',
+        'bg-orange-500 hover:bg-orange-600 text-white focus-visible:outline-orange-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed',
       secondary:
-        'bg-transparent hover:bg-gray-50 text-gray-900 border border-gray-200 hover:border-gray-300 focus-visible:outline-indigo-500 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed',
+        'bg-transparent hover:bg-gray-50 text-gray-900 border border-gray-200 hover:border-gray-300 focus-visible:outline-orange-500 disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed',
       danger:
         'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 hover:border-red-300 focus-visible:outline-red-500 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed',
     }

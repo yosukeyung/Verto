@@ -11,7 +11,7 @@ export function NotFoundView() {
         <h1 className="text-2xl font-bold leading-tight text-gray-900">
           Tag Not Found
         </h1>
-        <div className="w-8 border-b border-indigo-600 mx-auto mt-2 mb-3" />
+        <div className="w-8 border-b border-orange-500 mx-auto mt-2 mb-3" />
         <p className="text-base text-gray-500 max-w-xs mx-auto">
           This tag has not been registered yet. Please contact support.
         </p>

@@ -46,9 +46,9 @@ export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
                   onChangeMode(mode.id)
                 }
               }}
-              className={`w-full p-4 rounded-lg cursor-pointer transition-colors duration-150 flex items-start gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+              className={`w-full p-4 rounded-lg cursor-pointer transition-colors duration-150 flex items-start gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
                 isSelected
-                  ? 'border-l-2 border-indigo-600 bg-indigo-50 border-t border-r border-b border-indigo-200'
+                  ? 'border-l-2 border-orange-500 bg-orange-50 border-t border-r border-b border-orange-200'
                   : 'border border-gray-200 bg-white hover:bg-gray-50'
               }`}
             >
@@ -56,7 +56,7 @@ export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
                 <span
                   className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                     isSelected
-                      ? 'border-indigo-600 bg-indigo-600'
+                      ? 'border-orange-500 bg-orange-500'
                       : 'border-gray-400 bg-white'
                   }`}
                 >
@@ -66,14 +66,14 @@ export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
               <div className="flex-1">
                 <div
                   className={`text-sm font-semibold ${
-                    isSelected ? 'text-indigo-900' : 'text-gray-900'
+                    isSelected ? 'text-orange-900' : 'text-gray-900'
                   }`}
                 >
                   {mode.title}
                 </div>
                 <div
                   className={`text-xs mt-0.5 ${
-                    isSelected ? 'text-indigo-700' : 'text-gray-500'
+                    isSelected ? 'text-orange-700' : 'text-gray-500'
                   }`}
                 >
                   {mode.description}
