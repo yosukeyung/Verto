@@ -22,9 +22,9 @@ export default function HomePage() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-md mx-auto px-4 py-12 space-y-12">
+      <main className="flex-1 w-full max-w-md mx-auto px-4 pb-12 space-y-12">
         {/* Hero Section */}
-        <section className="relative isolate text-center space-y-4">
+        <section className="relative isolate text-center space-y-4 pt-32 md:pt-40">
           {/* Subtle Diffused Orange Glow */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] rounded-full bg-orange-500/15 blur-[100px] pointer-events-none"
