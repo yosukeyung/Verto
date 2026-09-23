@@ -61,8 +61,8 @@ function LoginForm() {
           </div>
 
           {error && (
-            <div 
-              role="alert" 
+            <div
+              role="alert"
               className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 flex items-start gap-2"
             >
               <AlertCircle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" strokeWidth={1.75} />
@@ -72,8 +72,8 @@ function LoginForm() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label 
-                htmlFor="email" 
+              <label
+                htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
                 Email
@@ -91,8 +91,8 @@ function LoginForm() {
             </div>
 
             <div>
-              <label 
-                htmlFor="password" 
+              <label
+                htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
                 Password

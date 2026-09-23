@@ -59,7 +59,7 @@ export default function GuidePage() {
       />
 
       {/* Main Guide Content */}
-      <main className="flex-1 w-full max-w-md mx-auto px-4 py-10 space-y-8">
+      <main className="flex-1 w-full max-w-md mx-auto px-4 pt-16 md:pt-22 pb-10 space-y-8">
         {/* Header Section */}
         <header className="text-center space-y-3">
           <Link

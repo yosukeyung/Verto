@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { MessageCircle } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
+import { StaggerHeadline } from '@/components/ui/StaggerHeadline'
 
 export default function HomePage() {
   const waOrderUrl =
@@ -24,22 +25,14 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="flex-1 w-full max-w-md mx-auto px-4 pb-12 space-y-12">
         {/* Hero Section */}
-        <section className="relative isolate text-center space-y-4 pt-32 md:pt-40">
+        <section className="relative isolate text-center space-y-4 pt-16 md:pt-22">
           {/* Subtle Diffused Orange Glow */}
           <div
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] rounded-full bg-orange-500/15 blur-[100px] pointer-events-none"
             aria-hidden="true"
           />
 
-          <h1 className="text-2xl sm:text-3xl font-bold leading-tight text-gray-900">
-            One Tap.
-            <br />
-            Infinite Possibilities.
-          </h1>
-          <div className="w-8 border-b border-orange-500 mx-auto" />
-          <p className="text-base text-gray-500 leading-normal max-w-sm mx-auto">
-            Share your professional profile, secure your belongings, and manage events with a single tap. No app required.
-          </p>
+          <StaggerHeadline />
 
           <div className="pt-2">
             <a

@@ -106,7 +106,7 @@ export function DashboardManager({
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 pt-6 pb-16 space-y-6">
+      <main className="flex-1 max-w-2xl w-full mx-auto px-4 pt-18 pb-16 space-y-6">
         <div>
           <h1 className="text-2xl font-bold leading-tight text-gray-900">
             Dashboard
