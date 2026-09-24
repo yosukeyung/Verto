@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Navbar } from '@/components/layout/Navbar'
+import { SignInButton } from '@/components/ui/SignInButton'
 
 function LoginForm() {
   const router = useRouter()
@@ -110,20 +111,7 @@ function LoginForm() {
             </div>
 
             <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-11 px-5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" strokeWidth={1.75} />
-                    <span>Signing in...</span>
-                  </>
-                ) : (
-                  <span>Sign In</span>
-                )}
-              </button>
+              <SignInButton isLoading={loading} />
             </div>
           </form>
         </div>
