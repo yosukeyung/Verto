@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button'
 import { Toast, type ToastType } from '@/components/ui/Toast'
 import { Card } from '@/components/ui/Card'
 import { Navbar } from '@/components/layout/Navbar'
+import { ProfileModal } from '@/components/ui/ProfileModal'
 import { saveTagSettings, signOutAction } from '@/app/dashboard/actions'
 
 interface DashboardManagerProps {
@@ -89,19 +90,11 @@ export function DashboardManager({
       {/* Top Navbar */}
       <Navbar
         rightAction={
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500 hidden sm:inline">{userEmail}</span>
-            <form action={signOutAction}>
-              <button
-                type="submit"
-                aria-label="Sign Out"
-                title="Sign out of account"
-                className="p-2 text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
-              >
-                <LogOut className="w-5 h-5" strokeWidth={1.75} />
-              </button>
-            </form>
-          </div>
+          <ProfileModal onSignOut={() => {
+            // we can call server action directly in a transition, or use form submit trick.
+            // But next.js allows calling server actions directly in onClick.
+            signOutAction()
+          }} />
         }
       />
 

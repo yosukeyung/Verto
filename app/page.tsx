@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { MessageCircle } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { StaggerHeadline } from '@/components/ui/StaggerHeadline'
+import { SignInButton } from '@/components/ui/SignInButton'
 
 export default function HomePage() {
   const waOrderUrl =
@@ -11,16 +12,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white flex flex-col justify-between overflow-x-clip">
       {/* 56px Navigation Header */}
-      <Navbar
-        rightAction={
-          <Link
-            href="/login"
-            className="text-sm font-medium text-gray-700 hover:text-gray-900 px-3.5 py-1.5 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
-          >
-            Sign In
-          </Link>
-        }
-      />
+      <Navbar rightAction={<SignInButton />} />
 
       {/* Main Content */}
       <main className="flex-1 w-full max-w-md mx-auto px-4 pb-12 space-y-12">

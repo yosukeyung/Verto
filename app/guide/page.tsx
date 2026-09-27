@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { MessageCircle, ArrowLeft } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Card } from '@/components/ui/Card'
+import { SignInButton } from '@/components/ui/SignInButton'
 
 export const metadata = {
   title: 'Getting Started - Verto',
@@ -47,16 +48,7 @@ export default function GuidePage() {
   return (
     <div className="min-h-screen bg-white flex flex-col justify-between">
       {/* 56px Navigation Header */}
-      <Navbar
-        rightAction={
-          <Link
-            href="/login"
-            className="text-sm font-medium text-gray-700 hover:text-gray-900 px-3.5 py-1.5 rounded-lg hover:bg-gray-50 border border-gray-200 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
-          >
-            Sign In
-          </Link>
-        }
-      />
+      <Navbar rightAction={<SignInButton />} />
 
       {/* Main Guide Content */}
       <main className="flex-1 w-full max-w-md mx-auto px-4 pt-16 md:pt-22 pb-10 space-y-8">

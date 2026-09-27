@@ -1,133 +1,27 @@
-'use client'
+import { notFound } from 'next/navigation'
+import { createServiceClient } from '@/lib/supabase/server'
+import LoginClient from './LoginForm'
 
-import { Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { AlertCircle, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { Navbar } from '@/components/layout/Navbar'
-import { SignInButton } from '@/components/ui/SignInButton'
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag_id?: string }>
+}) {
+  const params = await searchParams
+  const tag_id = params?.tag_id
 
-function LoginForm() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const tagId = searchParams.get('tag_id')
+  if (tag_id) {
+    const supabase = await createServiceClient()
+    const { data } = await supabase
+      .from('tags')
+      .select('tag_id')
+      .eq('tag_id', tag_id)
+      .single()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    const supabase = createClient()
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (signInError) {
-      setError('Invalid email or password. Please try again.')
-      setLoading(false)
-      return
+    if (!data) {
+      notFound()
     }
-
-    if (tagId) {
-      router.push(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`)
-    } else {
-      router.push('/dashboard')
-    }
-    router.refresh()
   }
 
-  return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 flex flex-col justify-center px-4 py-8">
-        <div className="w-full max-w-md mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold leading-tight text-gray-900">
-              Sign In to Dashboard
-            </h1>
-            <div className="w-8 border-b border-orange-500 mt-2 mb-3" />
-            {tagId && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-sm font-mono font-medium">
-                <span>Tag ID:</span>
-                <span className="text-gray-900">{tagId}</span>
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <div
-              role="alert"
-              className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700 flex items-start gap-2"
-            >
-              <AlertCircle className="w-5 h-5 shrink-0 text-red-500 mt-0.5" strokeWidth={1.75} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@email.com"
-                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1.5"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
-            </div>
-
-            <div className="pt-2">
-              <SignInButton isLoading={loading} />
-            </div>
-          </form>
-        </div>
-      </main>
-    </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" strokeWidth={1.75} />
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
-  )
+  return <LoginClient />
 }
