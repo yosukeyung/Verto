@@ -16,6 +16,9 @@ export type UserRole = 'user' | 'super_admin'
 
 export type ActiveMode = 'social' | 'lost_and_found' | 'event_hub'
 
+export type ThemeFont = 'sans' | 'serif' | 'mono'
+export type ThemeColor = 'orange' | 'black' | 'emerald' | 'blue'
+
 // ─── Metadata shapes (stored in tags.metadata JSONB) ─────────────────────────
 
 export interface SocialMetadata {
@@ -24,6 +27,8 @@ export interface SocialMetadata {
   wa?: string | null
   ig?: string | null
   linkedin?: string | null
+  theme_font?: ThemeFont
+  theme_color?: ThemeColor
 }
 
 export interface LostAndFoundMetadata {

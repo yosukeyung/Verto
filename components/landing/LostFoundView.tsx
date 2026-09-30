@@ -1,20 +1,46 @@
 import React from 'react'
 import { ShieldAlert, MessageCircle } from 'lucide-react'
-import type { LostAndFoundMetadata } from '@/types/database'
+import type { LostAndFoundMetadata, ThemeFont, ThemeColor } from '@/types/database'
 
-interface LostFoundViewProps {
-  metadata: Partial<LostAndFoundMetadata>
+export interface LostFoundViewProps {
+  metadata: Partial<LostAndFoundMetadata> & Record<string, any>
+  className?: string
+  isPreview?: boolean
 }
 
-export function LostFoundView({ metadata }: LostFoundViewProps) {
+const FONT_MAP: Record<ThemeFont, string> = {
+  sans: 'font-sans',
+  serif: 'font-serif',
+  mono: 'font-mono',
+}
+
+const COLOR_MAP: Record<ThemeColor, { hex: string; underlineClass: string }> = {
+  orange: { hex: '#FF5C00', underlineClass: 'border-[#FF5C00]' },
+  black: { hex: '#000000', underlineClass: 'border-black' },
+  emerald: { hex: '#10B981', underlineClass: 'border-[#10B981]' },
+  blue: { hex: '#3B82F6', underlineClass: 'border-[#3B82F6]' },
+}
+
+export function LostFoundView({ metadata, className, isPreview = false }: LostFoundViewProps) {
   const { item_name = 'Lost Item', owner_name = 'Owner', wa_number = '' } = metadata
+
+  const themeFontKey: ThemeFont = (metadata.theme_font as ThemeFont) || 'sans'
+  const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) || 'orange'
+
+  const fontClass = FONT_MAP[themeFontKey] || FONT_MAP.sans
+  const colorConfig = COLOR_MAP[themeColorKey] || COLOR_MAP.orange
 
   const cleanWa = wa_number.replace(/[^0-9]/g, '')
   const template = `Hello, I found your item (${item_name}). I found this contact information on your Verto tag.`
-  const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(template)}`
+  const waUrl = cleanWa ? `https://wa.me/${cleanWa}?text=${encodeURIComponent(template)}` : '#'
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-between px-4 py-12">
+    <main
+      className={`bg-white flex flex-col justify-between ${
+        className || 'min-h-screen px-4 py-12'
+      } ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
+      style={{ '--theme-accent': colorConfig.hex } as React.CSSProperties}
+    >
       <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center text-center">
         {/* Badge & Notice */}
         <div className="mb-6">
@@ -25,11 +51,14 @@ export function LostFoundView({ metadata }: LostFoundViewProps) {
             Item Found
           </span>
           <h1 className="text-2xl font-bold leading-tight text-gray-900">
-            {item_name}
+            {item_name || (isPreview ? 'Motorcycle Keys' : 'Lost Item')}
           </h1>
-          <div className="w-8 border-b border-orange-500 mx-auto mt-2 mb-3" />
+          <div
+            className={`w-8 border-b-2 ${colorConfig.underlineClass} mx-auto mt-2 mb-3`}
+            style={{ borderColor: colorConfig.hex }}
+          />
           <p className="text-base text-gray-600">
-            Owner: <span className="font-semibold text-gray-900">{owner_name}</span>
+            Owner: <span className="font-semibold text-gray-900">{owner_name || (isPreview ? 'Owner Name' : 'Owner')}</span>
           </p>
           <p className="text-xs text-gray-500 max-w-xs mx-auto mt-3">
             Thank you for scanning this tag. You can reach out directly to the owner using the button below.
@@ -42,7 +71,8 @@ export function LostFoundView({ metadata }: LostFoundViewProps) {
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full h-11 px-5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors duration-150 inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 shadow-sm"
+            className="w-full h-11 px-5 rounded-lg text-white text-sm font-medium transition-all duration-150 inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 shadow-sm"
+            style={{ backgroundColor: colorConfig.hex }}
           >
             <MessageCircle className="w-5 h-5 shrink-0" strokeWidth={1.75} />
             <span>Contact Owner via WhatsApp</span>
@@ -55,6 +85,6 @@ export function LostFoundView({ metadata }: LostFoundViewProps) {
           Powered by Verto
         </p>
       </footer>
-    </div>
+    </main>
   )
 }

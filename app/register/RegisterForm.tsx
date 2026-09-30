@@ -12,6 +12,9 @@ function RegisterForm() {
   const searchParams = useSearchParams()
   const tagId = searchParams.get('tag_id') || ''
 
+  const AVATAR_IDS = ['love', 'eat', 'sleep', 'angry', 'cry', 'study'] as const
+
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -37,9 +40,17 @@ function RegisterForm() {
     setLoading(true)
     const supabase = createClient()
 
+    const randomAvatarId = AVATAR_IDS[Math.floor(Math.random() * AVATAR_IDS.length)]
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName.trim(),
+          avatar_id: randomAvatarId,
+        },
+      },
     })
 
     if (signUpError) {
@@ -97,6 +108,25 @@ function RegisterForm() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label
+                htmlFor="fullName"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+              >
+                Full Name
+              </label>
+              <input
+                id="fullName"
+                type="text"
+                required
+                autoComplete="name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Your full name"
+                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              />
+            </div>
+
             <div>
               <label 
                 htmlFor="email" 

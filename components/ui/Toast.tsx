@@ -5,7 +5,7 @@ export type ToastType = 'success' | 'error' | 'warning'
 
 export interface ToastProps {
   type?: ToastType
-  message: string
+  message: React.ReactNode
   onClose?: () => void
   className?: string
 }
@@ -34,7 +34,7 @@ export function Toast({ type = 'success', message, onClose, className = '' }: To
       className={`animate-toast flex items-start gap-3 p-4 rounded-xl border shadow-sm ${current.bg} ${className}`.trim()}
     >
       {current.icon}
-      <p className="text-sm font-medium flex-1 pt-0.5">{message}</p>
+      <div className="text-sm font-medium flex-1 pt-0.5">{message}</div>
       {onClose && (
         <button
           type="button"

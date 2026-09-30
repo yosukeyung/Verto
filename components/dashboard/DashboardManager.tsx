@@ -1,18 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { ExternalLink, Loader2, LogOut, Radio } from 'lucide-react'
-import type { TagRow, ActiveMode } from '@/types/database'
+import { Radio } from 'lucide-react'
+import type { TagRow } from '@/types/database'
 import { TagSelector } from '@/components/dashboard/TagSelector'
-import { ModeSelector } from '@/components/dashboard/ModeSelector'
-import { ModeFormDispatcher } from '@/components/dashboard/ModeForms'
-import { Button } from '@/components/ui/Button'
-import { Toast, type ToastType } from '@/components/ui/Toast'
+import { TagSettingsForm } from '@/components/dashboard/TagSettingsForm'
 import { Card } from '@/components/ui/Card'
 import { Navbar } from '@/components/layout/Navbar'
 import { ProfileModal } from '@/components/ui/ProfileModal'
-import { saveTagSettings, signOutAction } from '@/app/dashboard/actions'
+import { signOutAction } from '@/app/dashboard/actions'
 
 interface DashboardManagerProps {
   initialTags: TagRow[]
@@ -27,62 +23,32 @@ export function DashboardManager({
 }: DashboardManagerProps) {
   const [tags, setTags] = useState<TagRow[]>(initialTags)
   const [selectedTagId, setSelectedTagId] = useState<string>(
-    initialSelectedTagId && initialTags.some(t => t.tag_id === initialSelectedTagId)
+    initialSelectedTagId && initialTags.some((t) => t.tag_id === initialSelectedTagId)
       ? initialSelectedTagId
       : initialTags[0]?.tag_id || ''
   )
+  const [profileFullName, setProfileFullName] = useState<string>('')
 
   const activeTag = tags.find((t) => t.tag_id === selectedTagId)
 
-  const [activeMode, setActiveMode] = useState<ActiveMode>(
-    activeTag?.active_mode || 'social'
-  )
-  const [metadata, setMetadata] = useState<Record<string, any>>(
-    (activeTag?.metadata as Record<string, any>) || {}
-  )
-
-  const [isSaving, setIsSaving] = useState(false)
-  const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null)
-
-  // Sync state whenever the selected tag changes
+  // Load profile full_name for auto-populating new tags
   useEffect(() => {
-    if (activeTag) {
-      setActiveMode(activeTag.active_mode)
-      setMetadata((activeTag.metadata as Record<string, any>) || {})
-    }
-  }, [selectedTagId, activeTag])
+    fetch('/api/profile')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.full_name) setProfileFullName(data.full_name)
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSelectTag = (tagId: string) => {
     setSelectedTagId(tagId)
-    setToast(null)
   }
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedTagId) return
-
-    setIsSaving(true)
-    setToast(null)
-
-    const res = await saveTagSettings(selectedTagId, activeMode, metadata)
-
-    if (res?.error) {
-      setToast({ type: 'error', message: res.error })
-      setIsSaving(false)
-      return
-    }
-
-    // Update local state
+  const handleSaveSuccess = (updatedTag: TagRow) => {
     setTags((prev) =>
-      prev.map((t) =>
-        t.tag_id === selectedTagId
-          ? { ...t, active_mode: activeMode, metadata, updated_at: new Date().toISOString() }
-          : t
-      )
+      prev.map((t) => (t.tag_id === updatedTag.tag_id ? updatedTag : t))
     )
-
-    setToast({ type: 'success', message: 'Tag settings saved successfully.' })
-    setIsSaving(false)
   }
 
   return (
@@ -90,16 +56,16 @@ export function DashboardManager({
       {/* Top Navbar */}
       <Navbar
         rightAction={
-          <ProfileModal onSignOut={() => {
-            // we can call server action directly in a transition, or use form submit trick.
-            // But next.js allows calling server actions directly in onClick.
-            signOutAction()
-          }} />
+          <ProfileModal
+            onSignOut={() => {
+              signOutAction()
+            }}
+          />
         }
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 pt-18 pb-16 space-y-6">
+      {/* Main Content Area: Centered, Focused Mobile-First Layout */}
+      <main className="flex-1 max-w-xl w-full mx-auto px-4 pt-18 pb-16 space-y-6">
         <div>
           <h1 className="text-2xl font-bold leading-tight text-gray-900">
             Dashboard
@@ -120,7 +86,7 @@ export function DashboardManager({
               You have not claimed any tags yet. Tap an NFC tag to start registration, or contact support.
             </p>
           </Card>
-        ) : (
+        ) : activeTag ? (
           <>
             {/* Tag Selector Chips */}
             <TagSelector
@@ -129,68 +95,23 @@ export function DashboardManager({
               onSelectTag={handleSelectTag}
             />
 
-            {/* Public Link Preview Quick-Action */}
-            <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 border border-gray-200">
+            {/* Public URL display */}
+            <div className="py-2 px-3 rounded-lg bg-gray-50 border border-gray-200">
               <div className="flex items-center gap-2 text-xs font-mono text-gray-600">
                 <span>Public URL:</span>
                 <span className="font-semibold text-gray-900">/t/{selectedTagId}</span>
               </div>
-              <a
-                href={`/t/${selectedTagId}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-xs font-medium text-orange-600 hover:text-orange-700 hover:underline"
-              >
-                <span>Open View</span>
-                <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.75} />
-              </a>
             </div>
 
-            {/* Form & Mode Controls */}
-            <form onSubmit={handleSave} className="space-y-6">
-              <ModeSelector
-                activeMode={activeMode}
-                onChangeMode={(newMode) => {
-                  setActiveMode(newMode)
-                  setToast(null)
-                }}
-              />
-
-              <div className="pt-2 border-t border-gray-200">
-                <div className="text-sm font-semibold text-gray-900 mb-4">
-                  {activeMode === 'social' ? 'Social Profile Settings' : activeMode === 'lost_and_found' ? 'Lost & Found Settings' : 'Event Settings'}
-                </div>
-
-                <ModeFormDispatcher
-                  activeMode={activeMode}
-                  metadata={metadata}
-                  onChangeMetadata={(newMeta) => setMetadata(newMeta)}
-                />
-              </div>
-
-              {/* Toast Feedback */}
-              {toast && (
-                <Toast
-                  type={toast.type}
-                  message={toast.message}
-                  onClose={() => setToast(null)}
-                />
-              )}
-
-              {/* Save Button (Primary CTA) */}
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  isLoading={isSaving}
-                  className="w-full"
-                >
-                  Save Settings
-                </Button>
-              </div>
-            </form>
+            {/* Tag Settings Form (Single Column Vertical Stack with Tabbed Controls & Action Buttons) */}
+            <TagSettingsForm
+              key={selectedTagId}
+              activeTag={activeTag}
+              profileFullName={profileFullName}
+              onSaveSuccess={handleSaveSuccess}
+            />
           </>
-        )}
+        ) : null}
       </main>
     </div>
   )

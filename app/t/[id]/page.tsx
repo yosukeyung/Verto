@@ -3,7 +3,7 @@ import { SocialView } from '@/components/landing/SocialView'
 import { LostFoundView } from '@/components/landing/LostFoundView'
 import { EventHubView } from '@/components/landing/EventHubView'
 import { NotFoundView } from '@/components/landing/NotFoundView'
-import type { TagRow } from '@/types/database'
+import type { TagRow, ThemeFont, ThemeColor } from '@/types/database'
 
 interface TagPageProps {
   params: Promise<{ id: string }>
@@ -33,7 +33,14 @@ export default async function TagPage({ params }: TagPageProps) {
     return <NotFoundView />
   }
 
-  const metadata = (tag.metadata as Record<string, any>) || {}
+  const rawMetadata = (tag.metadata as Record<string, any>) || {}
+  const theme_font: ThemeFont = rawMetadata.theme_font || 'sans'
+  const theme_color: ThemeColor = rawMetadata.theme_color || 'orange'
+  const metadata = {
+    ...rawMetadata,
+    theme_font,
+    theme_color,
+  }
 
   switch (tag.active_mode) {
     case 'social':

@@ -14,6 +14,7 @@ import {
   Tag,
   Trash2,
   Check,
+  Pencil,
 } from 'lucide-react'
 
 // ─── Avatar Definitions ────────────────────────────────────────────────────────
@@ -52,7 +53,12 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   const [isUnclaiming, setIsUnclaiming] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [saved, setSaved] = useState(false)
-  
+
+  // Nested Avatar Selection Pop-up State
+  const [isAvatarGalleryOpen, setIsAvatarGalleryOpen] = useState(false)
+  const [previewAvatar, setPreviewAvatar] = useState('love')
+
+  // Danger Zone Modals State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [unclaimModalOpen, setUnclaimModalOpen] = useState(false)
   const [confirmText, setConfirmText] = useState('')
@@ -65,6 +71,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   const firstFocusRef = useRef<HTMLButtonElement>(null)
 
   const activeAvatar = AVATARS.find((a) => a.id === selectedAvatar) ?? AVATARS[0]
+  const previewAvatarOption = AVATARS.find((a) => a.id === previewAvatar) ?? activeAvatar
 
   // ─── Load Profile on Mount ───────────────────────────────────────────────────
 
@@ -89,12 +96,13 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
 
   const open = () => {
     setSaved(false)
+    setIsAvatarGalleryOpen(false)
     setIsOpen(true)
   }
 
   const close = useCallback(() => {
     setIsOpen(false)
-    // Return focus to trigger (WCAG 2.1 A 2.4.3 Focus Order)
+    setIsAvatarGalleryOpen(false)
     requestAnimationFrame(() => triggerRef.current?.focus())
   }, [])
 
@@ -103,19 +111,25 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape') {
+        if (isAvatarGalleryOpen) {
+          setIsAvatarGalleryOpen(false)
+        } else {
+          close()
+        }
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [isOpen, close])
+  }, [isOpen, isAvatarGalleryOpen, close])
 
   // ─── Focus first element on open ─────────────────────────────────────────────
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isAvatarGalleryOpen) {
       requestAnimationFrame(() => firstFocusRef.current?.focus())
     }
-  }, [isOpen])
+  }, [isOpen, isAvatarGalleryOpen])
 
   // ─── Scroll-lock ─────────────────────────────────────────────────────────────
 
@@ -130,7 +144,23 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     }
   }, [isOpen])
 
-  // ─── Handlers ────────────────────────────────────────────────────────────────
+  // ─── Avatar Gallery Handlers ─────────────────────────────────────────────────
+
+  const openAvatarGallery = () => {
+    setPreviewAvatar(selectedAvatar)
+    setIsAvatarGalleryOpen(true)
+  }
+
+  const handleCancelAvatar = () => {
+    setIsAvatarGalleryOpen(false)
+  }
+
+  const handleSaveAvatar = () => {
+    setSelectedAvatar(previewAvatar)
+    setIsAvatarGalleryOpen(false)
+  }
+
+  // ─── Profile Handlers ────────────────────────────────────────────────────────
 
   async function handleSave() {
     setIsSaving(true)
@@ -298,11 +328,105 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
             onKeyDown={handleModalKeyDown}
             className="
               relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl
-              overflow-hidden
+              overflow-hidden min-h-[480px] flex flex-col
               animate-in fade-in zoom-in-95 duration-200
             "
           >
-            {/* ─── Header bar ─────────────────────────────────────────────────── */}
+            {/* ─── Nested Avatar Selection View ───────────────────────────────── */}
+            {isAvatarGalleryOpen ? (
+              <div className="absolute inset-0 z-20 bg-white flex flex-col animate-in fade-in zoom-in-95 duration-150">
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                  <button
+                    type="button"
+                    onClick={handleCancelAvatar}
+                    aria-label="Cancel avatar selection"
+                    className="
+                      p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100
+                      transition-colors duration-150
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]
+                    "
+                  >
+                    <X className="w-4 h-4" strokeWidth={2} />
+                  </button>
+
+                  <h3 className="text-sm font-semibold text-gray-900 tracking-tight">
+                    Choose Avatar
+                  </h3>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveAvatar}
+                    className="
+                      px-3 py-1 text-sm font-semibold text-[#FF5C00] hover:text-[#e04e00]
+                      hover:bg-orange-50 rounded-lg transition-colors duration-150
+                      focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]
+                    "
+                  >
+                    Save
+                  </button>
+                </div>
+
+                {/* Divider */}
+                <div className="h-px bg-gray-100 mx-5" />
+
+                {/* Body */}
+                <div className="flex-1 flex flex-col items-center justify-center px-5 py-6 space-y-8">
+                  {/* Center: Large Preview */}
+                  <div className="relative">
+                    <img
+                      src={previewAvatarOption.src}
+                      alt={previewAvatarOption.name}
+                      className="w-28 h-28 rounded-full object-contain bg-gray-50 shadow-sm border border-gray-100 ring-4 ring-orange-500/20 transition-all duration-200"
+                    />
+                  </div>
+
+                  {/* Bottom: Horizontal scrollable row */}
+                  <div
+                    role="radiogroup"
+                    aria-label="Choose avatar"
+                    className="flex items-center gap-3 overflow-x-auto py-2 px-2 w-full justify-start sm:justify-center scrollbar-none"
+                  >
+                    {AVATARS.map((av) => {
+                      const isSelected = av.id === previewAvatar
+                      return (
+                        <button
+                          key={av.id}
+                          type="button"
+                          id={`nested-avatar-option-${av.id}`}
+                          role="radio"
+                          aria-checked={isSelected}
+                          aria-label={`Avatar: ${av.name}`}
+                          onClick={() => setPreviewAvatar(av.id)}
+                          className={`
+                            relative flex-shrink-0 rounded-full transition-all duration-150
+                            hover:scale-105 active:scale-95 focus:outline-none
+                            ${isSelected
+                              ? 'ring-2 ring-orange-500 ring-offset-2'
+                              : 'hover:ring-2 hover:ring-gray-300'
+                            }
+                          `}
+                        >
+                          <img
+                            src={av.src}
+                            alt={av.name}
+                            className="w-14 h-14 rounded-full object-contain bg-gray-50"
+                          />
+                          {isSelected && (
+                            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center shadow-sm">
+                              <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* ─── Main Profile View ──────────────────────────────────────────── */}
+            {/* Header bar */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               {/* Close */}
               <button
@@ -344,66 +468,31 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
             {/* Divider */}
             <div className="h-px bg-gray-100 mx-5" />
 
-            {/* ─── Scrollable body ────────────────────────────────────────────── */}
-            <div className="px-5 py-5 overflow-y-auto max-h-[calc(90vh-5rem)] space-y-6">
-              {/* ─── Avatar section ───────────────────────────────────────────── */}
-              <div className="flex flex-col items-center gap-4">
-                {/* Large active avatar */}
-                <div className="relative">
+            {/* Scrollable body */}
+            <div className="px-5 py-5 overflow-y-auto max-h-[calc(90vh-5rem)] space-y-6 flex-1">
+              {/* Avatar section: Large Active Avatar with Pencil Edit Badge */}
+              <div className="flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={openAvatarGallery}
+                  aria-label="Change profile avatar"
+                  className="group relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00] focus-visible:ring-offset-2 transition-transform active:scale-95"
+                >
                   <img
                     src={activeAvatar.src}
                     alt={activeAvatar.name}
-                    className="w-24 h-24 rounded-full object-contain bg-gray-50 p-1.5 shadow-sm border border-gray-100 ring-2 ring-orange-500/20 transition-all duration-200"
+                    className="w-24 h-24 rounded-full object-contain bg-gray-50 shadow-sm border border-gray-100 ring-2 ring-orange-500/20 group-hover:ring-orange-500 transition-all duration-200"
                   />
-                </div>
-
-                {/* Avatar picker row */}
-                <div
-                  role="radiogroup"
-                  aria-label="Choose avatar"
-                  className="flex items-center gap-3 overflow-x-auto py-2 px-1 w-full justify-start sm:justify-center scrollbar-none"
-                >
-                  {AVATARS.map((av) => {
-                    const isSelected = av.id === selectedAvatar
-                    return (
-                      <button
-                        key={av.id}
-                        type="button"
-                        id={`avatar-option-${av.id}`}
-                        role="radio"
-                        aria-checked={isSelected}
-                        aria-label={`Avatar: ${av.name}`}
-                        onClick={() => setSelectedAvatar(av.id)}
-                        className={`
-                          relative flex-shrink-0 rounded-full transition-all duration-150
-                          hover:scale-105 active:scale-95 focus:outline-none
-                          ${isSelected
-                            ? 'ring-2 ring-orange-500 ring-offset-2'
-                            : 'hover:ring-2 hover:ring-gray-300'
-                          }
-                        `}
-                      >
-                        <img
-                          src={av.src}
-                          alt={av.name}
-                          className="w-14 h-14 rounded-full object-contain bg-gray-50 p-1"
-                        />
-                        {isSelected && (
-                          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center shadow-sm">
-                            <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                          </span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <p className="text-xs text-gray-500">
-                  <span className="font-semibold text-gray-700 capitalize">{activeAvatar.name}</span> Red Panda selected
-                </p>
+                  <span
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 group-hover:text-[#FF5C00] group-hover:border-orange-200 transition-colors"
+                    title="Edit avatar"
+                  >
+                    <Pencil className="w-4 h-4" strokeWidth={2} />
+                  </span>
+                </button>
               </div>
 
-              {/* ─── Form fields ──────────────────────────────────────────────── */}
+              {/* Form fields */}
               <div className="space-y-4">
                 {/* Full name input */}
                 <div className="space-y-1.5">
@@ -475,12 +564,12 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
                   {isSaving
                     ? 'Saving...'
                     : saved
-                    ? '✓ Saved'
-                    : 'Save Changes'}
+                      ? '✓ Saved'
+                      : 'Save Changes'}
                 </button>
               </div>
 
-              {/* ─── Danger Zone ──────────────────────────────────────────────── */}
+              {/* Danger Zone */}
               <div className="border border-red-200 bg-red-50/30 rounded-xl p-4 space-y-3">
                 <p className="text-xs font-semibold text-red-700 uppercase tracking-wider">
                   Danger Zone
