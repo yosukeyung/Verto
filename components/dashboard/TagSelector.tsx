@@ -10,7 +10,7 @@ interface TagSelectorProps {
 export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorProps) {
   if (tags.length <= 1) {
     return (
-      <div className="flex items-center gap-2">
+      <div id="tour-tag-selector" className="flex items-center gap-2">
         <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
           Active Tag:
         </span>
@@ -22,7 +22,7 @@ export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorPro
   }
 
   return (
-    <div className="w-full">
+    <div id="tour-tag-selector" className="w-full">
       <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
         Select Tag ({tags.length})
       </div>

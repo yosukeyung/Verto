@@ -246,8 +246,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
       if (res.ok) {
         setUnclaimModalOpen(false)
         close()
-        router.push('/dashboard')
-        router.refresh()
+        window.location.reload()
       } else {
         alert('Failed to unclaim tag.')
       }

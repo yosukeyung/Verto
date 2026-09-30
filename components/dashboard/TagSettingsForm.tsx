@@ -165,8 +165,10 @@ export function TagSettingsForm({
         />
       </div>
 
-      {/* Theme Customization Section: Vertical Stack */}
-      <div className="pt-6 border-t border-gray-200 space-y-4">
+      {/* Step 4 Tour Target: Theme Customization & Save buttons */}
+      <div id="tour-theme-and-save" className="space-y-6">
+        {/* Theme Customization Section: Vertical Stack */}
+        <div className="pt-6 border-t border-gray-200 space-y-4">
         <div>
           <h3 className="text-sm font-semibold text-gray-900">
             Theme Customization
@@ -353,6 +355,7 @@ export function TagSettingsForm({
             <span>Save Changes</span>
           )}
         </button>
+      </div>
       </div>
     </form>
   )

@@ -1,10 +1,16 @@
-import Link from 'next/link'
+'use client'
+
+import { useState } from 'react'
 import { MessageCircle } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { StaggerHeadline } from '@/components/ui/StaggerHeadline'
 import { SignInButton } from '@/components/ui/SignInButton'
+import { NfcHelpModal } from '@/components/landing/NfcHelpModal'
+import { Footer } from '@/components/layout/Footer'
 
 export default function HomePage() {
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
+
   const waOrderUrl =
     'https://wa.me/6281234567890?text=' +
     encodeURIComponent('Hello Verto, I would like to order an NFC tag.')
@@ -20,13 +26,15 @@ export default function HomePage() {
         <section className="relative isolate text-center space-y-4 pt-16 md:pt-22">
           {/* Subtle Diffused Orange Glow */}
           <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] rounded-full bg-orange-500/15 blur-[100px] pointer-events-none"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[300px] h-[300px] sm:w-[380px] sm:h-[380px] rounded-full bg-orange-500/30 blur-[100px] pointer-events-none"
+
+
             aria-hidden="true"
           />
 
           <StaggerHeadline />
 
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col items-center gap-2.5">
             <a
               href={waOrderUrl}
               target="_blank"
@@ -34,8 +42,16 @@ export default function HomePage() {
               className="w-full h-11 px-5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium transition-colors duration-150 inline-flex items-center justify-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 border-b border-orange-600 shadow-sm"
             >
               <MessageCircle className="w-5 h-5 shrink-0" strokeWidth={1.75} />
-              <span>Order NFC Tag via WhatsApp</span>
+              <span>Buy Our Products</span>
             </a>
+
+            <button
+              type="button"
+              onClick={() => setIsHelpModalOpen(true)}
+              className="text-xs text-gray-500 hover:text-gray-900 underline underline-offset-4 transition-colors duration-150 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded cursor-pointer"
+            >
+              New to NFC? Learn how to turn it on.
+            </button>
           </div>
         </section>
 
@@ -113,32 +129,16 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* Getting Started Guide CTA */}
-        <section className="text-center space-y-3 pt-6 border-t border-gray-100">
-          <h2 className="text-lg font-semibold leading-tight text-gray-900">
-            Ready to digitalize your campus life?
-          </h2>
-          <p className="text-sm text-gray-500 max-w-sm mx-auto">
-            See exactly how easy it is to set up your Verto tag in under 2 minutes.
-          </p>
-          <div className="pt-1">
-            <Link
-              href="/guide"
-              className="w-full h-11 px-5 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-medium transition-colors duration-150 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500"
-            >
-              Read the Step-by-Step Guide
-            </Link>
-          </div>
-        </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 py-6 text-center">
-        <p className="text-xs text-gray-400">
-          © Verto 2026. All rights reserved.
-        </p>
-      </footer>
+      <Footer />
+
+      {/* NFC Help Modal */}
+      <NfcHelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+      />
     </div>
   )
 }

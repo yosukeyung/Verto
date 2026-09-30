@@ -61,6 +61,7 @@ function RegisterForm() {
 
     if (data.session) {
       // Session immediately active, route to claim flow
+      localStorage.setItem('verto_session_start', Date.now().toString())
       router.push(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`)
       router.refresh()
     } else {

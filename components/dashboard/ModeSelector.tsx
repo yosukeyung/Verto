@@ -26,7 +26,7 @@ const MODES: { id: ActiveMode; title: string; description: string }[] = [
 
 export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
   return (
-    <div className="space-y-3">
+    <div id="tour-tag-mode" className="space-y-3">
       <div className="text-sm font-semibold text-gray-900 mb-1">
         Active Tag Mode
       </div>

@@ -8,7 +8,9 @@ import { TagSettingsForm } from '@/components/dashboard/TagSettingsForm'
 import { Card } from '@/components/ui/Card'
 import { Navbar } from '@/components/layout/Navbar'
 import { ProfileModal } from '@/components/ui/ProfileModal'
+import { DashboardTutorial } from '@/components/dashboard/DashboardTutorial'
 import { signOutAction } from '@/app/dashboard/actions'
+import { useSessionTimeout } from '@/hooks/useSessionTimeout'
 
 interface DashboardManagerProps {
   initialTags: TagRow[]
@@ -21,6 +23,8 @@ export function DashboardManager({
   userEmail,
   initialSelectedTagId,
 }: DashboardManagerProps) {
+  useSessionTimeout()
+  
   const [tags, setTags] = useState<TagRow[]>(initialTags)
   const [selectedTagId, setSelectedTagId] = useState<string>(
     initialSelectedTagId && initialTags.some((t) => t.tag_id === initialSelectedTagId)
@@ -53,6 +57,9 @@ export function DashboardManager({
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      {/* Onboarding Tutorial */}
+      <DashboardTutorial hasTags={tags.length > 0} />
+
       {/* Top Navbar */}
       <Navbar
         rightAction={
