@@ -7,6 +7,7 @@ import {
   useCallback,
   type KeyboardEvent,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import {
   X,
@@ -45,14 +46,26 @@ interface ProfileModalProps {
 
 export function ProfileModal({ onSignOut }: ProfileModalProps) {
   const router = useRouter()
+
+  // ─── Portal mount guard (SSR safety) ─────────────────────────────────────────
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
+  // ─── Modal state ──────────────────────────────────────────────────────────────
   const [isOpen, setIsOpen] = useState(false)
   const [name, setName] = useState('')
+  const [initialName, setInitialName] = useState('')
   const [selectedAvatar, setSelectedAvatar] = useState('love')
+  const [initialAvatar, setInitialAvatar] = useState('love')
   const [email, setEmail] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [isUnclaiming, setIsUnclaiming] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // Dirty state
+  const hasChanges =
+    name.trim() !== initialName.trim() || selectedAvatar !== initialAvatar
 
   // Nested Avatar Selection Pop-up State
   const [isAvatarGalleryOpen, setIsAvatarGalleryOpen] = useState(false)
@@ -73,7 +86,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   const activeAvatar = AVATARS.find((a) => a.id === selectedAvatar) ?? AVATARS[0]
   const previewAvatarOption = AVATARS.find((a) => a.id === previewAvatar) ?? activeAvatar
 
-  // ─── Load Profile on Mount ───────────────────────────────────────────────────
+  // ─── Load Profile on Mount ────────────────────────────────────────────────────
 
   useEffect(() => {
     async function loadProfile() {
@@ -81,8 +94,12 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
         const res = await fetch('/api/profile')
         if (res.ok) {
           const data = await res.json()
-          setName(data.full_name || '')
-          setSelectedAvatar(data.avatar_id || 'love')
+          const fetchedName = data.full_name || ''
+          const fetchedAvatar = data.avatar_id || 'love'
+          setName(fetchedName)
+          setInitialName(fetchedName)
+          setSelectedAvatar(fetchedAvatar)
+          setInitialAvatar(fetchedAvatar)
           setEmail(data.email || '')
         }
       } catch (err) {
@@ -92,9 +109,25 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     loadProfile()
   }, [])
 
-  // ─── Open / close ────────────────────────────────────────────────────────────
+  // ─── Body scroll-lock ─────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const anyOpen = isOpen || unclaimModalOpen || deleteModalOpen
+    if (anyOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen, unclaimModalOpen, deleteModalOpen])
+
+  // ─── Open / close ─────────────────────────────────────────────────────────────
 
   const open = () => {
+    setName(initialName)
+    setSelectedAvatar(initialAvatar)
     setSaved(false)
     setIsAvatarGalleryOpen(false)
     setIsOpen(true)
@@ -106,7 +139,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     requestAnimationFrame(() => triggerRef.current?.focus())
   }, [])
 
-  // ─── Keyboard: Escape to close ───────────────────────────────────────────────
+  // ─── Keyboard: Escape to close ────────────────────────────────────────────────
 
   useEffect(() => {
     if (!isOpen) return
@@ -131,20 +164,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     }
   }, [isOpen, isAvatarGalleryOpen])
 
-  // ─── Scroll-lock ─────────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isOpen])
-
-  // ─── Avatar Gallery Handlers ─────────────────────────────────────────────────
+  // ─── Avatar Gallery Handlers ──────────────────────────────────────────────────
 
   const openAvatarGallery = () => {
     setPreviewAvatar(selectedAvatar)
@@ -160,17 +180,22 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     setIsAvatarGalleryOpen(false)
   }
 
-  // ─── Profile Handlers ────────────────────────────────────────────────────────
+  // ─── Profile Handlers ─────────────────────────────────────────────────────────
 
   async function handleSave() {
+    if (!hasChanges || isSaving || !name.trim()) return
     setIsSaving(true)
     try {
+      const trimmedName = name.trim()
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: name.trim(), avatar_id: selectedAvatar }),
+        body: JSON.stringify({ full_name: trimmedName, avatar_id: selectedAvatar }),
       })
       if (res.ok) {
+        setInitialName(trimmedName)
+        setName(trimmedName)
+        setInitialAvatar(selectedAvatar)
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
       } else {
@@ -255,7 +280,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     }
   }
 
-  // ─── Tab trap ────────────────────────────────────────────────────────────────
+  // ─── Tab trap ─────────────────────────────────────────────────────────────────
 
   function handleModalKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key !== 'Tab') return
@@ -278,7 +303,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     }
   }
 
-  // ─── Trigger Button ──────────────────────────────────────────────────────────
+  // ─── Trigger Button ───────────────────────────────────────────────────────────
 
   const trigger = (
     <button
@@ -303,137 +328,43 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     </button>
   )
 
-  return (
-    <>
-      {trigger}
+  // ─── Portal: Profile Modal ────────────────────────────────────────────────────
 
-      {isOpen && (
-        /* ─── Backdrop ──────────────────────────────────────────────────────── */
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          role="presentation"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) close()
-          }}
-        >
-          {/* Blurred overlay */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+  const profileModal = mounted && isOpen ? createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="presentation"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        aria-hidden="true"
+        onClick={close}
+      />
 
-          {/* ─── Modal Panel ─────────────────────────────────────────────────── */}
-          <div
-            ref={modalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="profile-modal-title"
-            onKeyDown={handleModalKeyDown}
-            className="
-              relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl
-              overflow-hidden min-h-[480px] flex flex-col
-              animate-in fade-in zoom-in-95 duration-200
-            "
-          >
-            {/* ─── Nested Avatar Selection View ───────────────────────────────── */}
-            {isAvatarGalleryOpen ? (
-              <div className="absolute inset-0 z-20 bg-white flex flex-col animate-in fade-in zoom-in-95 duration-150">
-                {/* Header */}
-                <div className="flex items-center justify-between px-5 pt-5 pb-3">
-                  <button
-                    type="button"
-                    onClick={handleCancelAvatar}
-                    aria-label="Cancel avatar selection"
-                    className="
-                      p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100
-                      transition-colors duration-150
-                      focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]
-                    "
-                  >
-                    <X className="w-4 h-4" strokeWidth={2} />
-                  </button>
-
-                  <h3 className="text-sm font-semibold text-gray-900 tracking-tight">
-                    Choose Avatar
-                  </h3>
-
-                  <button
-                    type="button"
-                    onClick={handleSaveAvatar}
-                    className="
-                      px-3 py-1 text-sm font-semibold text-[#FF5C00] hover:text-[#e04e00]
-                      hover:bg-orange-50 rounded-lg transition-colors duration-150
-                      focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]
-                    "
-                  >
-                    Save
-                  </button>
-                </div>
-
-                {/* Divider */}
-                <div className="h-px bg-gray-100 mx-5" />
-
-                {/* Body */}
-                <div className="flex-1 flex flex-col items-center justify-center px-5 py-6 space-y-8">
-                  {/* Center: Large Preview */}
-                  <div className="relative">
-                    <img
-                      src={previewAvatarOption.src}
-                      alt={previewAvatarOption.name}
-                      className="w-28 h-28 rounded-full object-contain bg-gray-50 shadow-sm border border-gray-100 ring-4 ring-orange-500/20 transition-all duration-200"
-                    />
-                  </div>
-
-                  {/* Bottom: Horizontal scrollable row */}
-                  <div
-                    role="radiogroup"
-                    aria-label="Choose avatar"
-                    className="flex items-center gap-3 overflow-x-auto py-2 px-2 w-full justify-start sm:justify-center scrollbar-none"
-                  >
-                    {AVATARS.map((av) => {
-                      const isSelected = av.id === previewAvatar
-                      return (
-                        <button
-                          key={av.id}
-                          type="button"
-                          id={`nested-avatar-option-${av.id}`}
-                          role="radio"
-                          aria-checked={isSelected}
-                          aria-label={`Avatar: ${av.name}`}
-                          onClick={() => setPreviewAvatar(av.id)}
-                          className={`
-                            relative flex-shrink-0 rounded-full transition-all duration-150
-                            hover:scale-105 active:scale-95 focus:outline-none
-                            ${isSelected
-                              ? 'ring-2 ring-orange-500 ring-offset-2'
-                              : 'hover:ring-2 hover:ring-gray-300'
-                            }
-                          `}
-                        >
-                          <img
-                            src={av.src}
-                            alt={av.name}
-                            className="w-14 h-14 rounded-full object-contain bg-gray-50"
-                          />
-                          {isSelected && (
-                            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center shadow-sm">
-                              <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {/* ─── Main Profile View ──────────────────────────────────────────── */}
-            {/* Header bar */}
+      {/* Modal Panel */}
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-modal-title"
+        onKeyDown={handleModalKeyDown}
+        onClick={(e) => e.stopPropagation()}
+        className="
+          relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl
+          overflow-hidden max-h-[90dvh] flex flex-col
+          animate-in fade-in zoom-in-95 duration-200
+        "
+      >
+        {/* ─── Nested Avatar Selection View ─────────────────────────────────── */}
+        {isAvatarGalleryOpen ? (
+          <div className="absolute inset-0 z-20 bg-white flex flex-col animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
-              {/* Close */}
               <button
-                ref={firstFocusRef}
-                id="profile-modal-close"
-                onClick={close}
-                aria-label="Close profile settings"
+                type="button"
+                onClick={handleCancelAvatar}
+                aria-label="Cancel avatar selection"
                 className="
                   p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100
                   transition-colors duration-150
@@ -443,269 +374,393 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
                 <X className="w-4 h-4" strokeWidth={2} />
               </button>
 
-              <h2
-                id="profile-modal-title"
-                className="text-sm font-semibold text-gray-900 tracking-tight"
-              >
-                Your Profile
-              </h2>
+              <h3 className="text-sm font-semibold text-gray-900 tracking-tight">
+                Choose Avatar
+              </h3>
 
-              {/* Sign out */}
               <button
-                id="profile-modal-signout"
-                onClick={onSignOut}
-                aria-label="Sign out"
+                type="button"
+                onClick={handleSaveAvatar}
                 className="
-                  p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50
-                  transition-colors duration-150
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+                  px-3 py-1 text-sm font-semibold text-[#FF5C00] hover:text-[#e04e00]
+                  hover:bg-orange-50 rounded-lg transition-colors duration-150
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]
                 "
               >
-                <LogOut className="w-4 h-4" strokeWidth={1.75} />
+                Save
               </button>
             </div>
 
             {/* Divider */}
             <div className="h-px bg-gray-100 mx-5" />
 
-            {/* Scrollable body */}
-            <div className="px-5 py-5 overflow-y-auto max-h-[calc(90vh-5rem)] space-y-6 flex-1">
-              {/* Avatar section: Large Active Avatar with Pencil Edit Badge */}
-              <div className="flex flex-col items-center">
-                <button
-                  type="button"
-                  onClick={openAvatarGallery}
-                  aria-label="Change profile avatar"
-                  className="group relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00] focus-visible:ring-offset-2 transition-transform active:scale-95"
-                >
-                  <img
-                    src={activeAvatar.src}
-                    alt={activeAvatar.name}
-                    className="w-24 h-24 rounded-full object-contain bg-gray-50 shadow-sm border border-gray-100 ring-2 ring-orange-500/20 group-hover:ring-orange-500 transition-all duration-200"
-                  />
-                  <span
-                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 group-hover:text-[#FF5C00] group-hover:border-orange-200 transition-colors"
-                    title="Edit avatar"
-                  >
-                    <Pencil className="w-4 h-4" strokeWidth={2} />
-                  </span>
-                </button>
+            {/* Body */}
+            <div className="flex-1 flex flex-col items-center justify-center px-5 py-6 space-y-8">
+              {/* Large Preview */}
+              <div className="relative">
+                <img
+                  src={previewAvatarOption.src}
+                  alt={previewAvatarOption.name}
+                  className="w-28 h-28 rounded-full object-contain bg-gray-50 shadow-sm border border-gray-100 ring-4 ring-orange-500/20 transition-all duration-200"
+                />
               </div>
 
-              {/* Form fields */}
-              <div className="space-y-4">
-                {/* Full name input */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="profile-name-input"
-                    className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
-                  >
-                    Full Name
-                  </label>
-                  <input
-                    id="profile-name-input"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    maxLength={50}
-                    className="
-                      w-full px-3.5 py-2.5 rounded-lg text-sm text-gray-900 bg-gray-50
-                      border border-gray-200
-                      placeholder:text-gray-400
-                      transition-colors duration-150
-                      focus:outline-none focus:bg-white focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00]
-                    "
-                  />
-                </div>
-
-                {/* Email (read-only) */}
-                <div className="space-y-1.5">
-                  <label
-                    htmlFor="profile-email-display"
-                    className="block text-xs font-semibold uppercase tracking-wider text-gray-400"
-                  >
-                    Email
-                  </label>
-                  <input
-                    id="profile-email-display"
-                    type="email"
-                    value={email}
-                    readOnly
-                    aria-describedby="profile-email-hint"
-                    className="
-                      w-full px-3.5 py-2.5 rounded-lg text-sm text-gray-500 bg-gray-100
-                      border border-gray-200 cursor-not-allowed select-all
-                      focus:outline-none
-                    "
-                  />
-                  <p id="profile-email-hint" className="text-xs text-gray-400">
-                    Email cannot be changed.
-                  </p>
-                </div>
-
-                {/* Save button */}
-                <button
-                  id="profile-save-button"
-                  onClick={handleSave}
-                  disabled={isSaving || !name.trim()}
-                  className={`
-                    w-full py-2.5 rounded-lg text-sm font-semibold text-white
-                    transition-all duration-200
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00] focus-visible:ring-offset-2
-                    disabled:opacity-40 disabled:cursor-not-allowed
-                    active:scale-[0.98]
-                    ${saved
-                      ? 'bg-emerald-500 hover:bg-emerald-600'
-                      : 'bg-[#FF5C00] hover:bg-[#e04e00]'
-                    }
-                  `}
-                >
-                  {isSaving
-                    ? 'Saving...'
-                    : saved
-                      ? '✓ Saved'
-                      : 'Save Changes'}
-                </button>
-              </div>
-
-              {/* Danger Zone */}
-              <div className="border border-red-200 bg-red-50/30 rounded-xl p-4 space-y-3">
-                <p className="text-xs font-semibold text-red-700 uppercase tracking-wider">
-                  Danger Zone
-                </p>
-
-                {/* Unclaim Tag */}
-                <button
-                  id="profile-unclaim-tags-button"
-                  onClick={openUnclaimModal}
-                  className="
-                    w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    text-red-600 border border-red-200 bg-white
-                    hover:bg-red-50 hover:border-red-300
-                    transition-colors duration-150
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400
-                    active:scale-[0.98]
-                  "
-                >
-                  <Tag className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
-                  <span>Unclaim Tag</span>
-                </button>
-
-                {/* Delete Profile */}
-                <button
-                  id="profile-delete-button"
-                  onClick={openDeleteModal}
-                  className="
-                    w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    text-white bg-red-600 border border-red-700
-                    hover:bg-red-700
-                    transition-colors duration-150
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1
-                    active:scale-[0.98]
-                  "
-                >
-                  <Trash2 className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
-                  <span>Delete Profile</span>
-                </button>
+              {/* Horizontal scrollable row */}
+              <div
+                role="radiogroup"
+                aria-label="Choose avatar"
+                className="flex items-center gap-3 overflow-x-auto py-2 px-2 w-full justify-start sm:justify-center scrollbar-none"
+              >
+                {AVATARS.map((av) => {
+                  const isSelected = av.id === previewAvatar
+                  return (
+                    <button
+                      key={av.id}
+                      type="button"
+                      id={`nested-avatar-option-${av.id}`}
+                      role="radio"
+                      aria-checked={isSelected}
+                      aria-label={`Avatar: ${av.name}`}
+                      onClick={() => setPreviewAvatar(av.id)}
+                      className={`
+                        relative flex-shrink-0 rounded-full transition-all duration-150
+                        hover:scale-105 active:scale-95 focus:outline-none
+                        ${isSelected
+                          ? 'ring-2 ring-orange-500 ring-offset-2'
+                          : 'hover:ring-2 hover:ring-gray-300'
+                        }
+                      `}
+                    >
+                      <img
+                        src={av.src}
+                        alt={av.name}
+                        className="w-14 h-14 rounded-full object-contain bg-gray-50"
+                      />
+                      {isSelected && (
+                        <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center shadow-sm">
+                          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ) : null}
 
-      {unclaimModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95">
-            <h3 className="text-lg font-semibold text-gray-900">Unclaim Tag</h3>
-            <p className="text-sm text-gray-500">
-              Select a tag to unclaim. This will reset its metadata and it will become available for anyone to claim again.
-            </p>
-            {isLoadingTags ? (
-              <p className="text-sm text-gray-400">Loading your tags...</p>
-            ) : userTags.length === 0 ? (
-              <p className="text-sm text-red-500">You don't own any tags.</p>
-            ) : (
-              <select
-                value={selectedTagToUnclaim}
-                onChange={(e) => setSelectedTagToUnclaim(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5C00]"
+        {/* ─── Main Profile View ─────────────────────────────────────────────── */}
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+          {/* Close */}
+          <button
+            ref={firstFocusRef}
+            id="profile-modal-close"
+            onClick={close}
+            aria-label="Close profile settings"
+            className="
+              p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100
+              transition-colors duration-150
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]
+            "
+          >
+            <X className="w-4 h-4" strokeWidth={2} />
+          </button>
+
+          <h2
+            id="profile-modal-title"
+            className="text-sm font-semibold text-gray-900 tracking-tight"
+          >
+            Your Profile
+          </h2>
+
+          {/* Sign out */}
+          <button
+            id="profile-modal-signout"
+            onClick={onSignOut}
+            aria-label="Sign out"
+            className="
+              p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50
+              transition-colors duration-150
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+            "
+          >
+            <LogOut className="w-4 h-4" strokeWidth={1.75} />
+          </button>
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gray-100 mx-5 flex-shrink-0" />
+
+        {/* Scrollable body */}
+        <div className="px-5 py-5 space-y-6 overflow-y-auto flex-1">
+          {/* Avatar section */}
+          <div className="flex flex-col items-center">
+            <button
+              type="button"
+              onClick={openAvatarGallery}
+              aria-label="Change profile avatar"
+              className="group relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00] focus-visible:ring-offset-2 transition-transform active:scale-95"
+            >
+              <img
+                src={activeAvatar.src}
+                alt={activeAvatar.name}
+                className="w-24 h-24 rounded-full object-contain bg-gray-50 shadow-sm border border-gray-100 ring-2 ring-orange-500/20 group-hover:ring-orange-500 transition-all duration-200"
+              />
+              <span
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 group-hover:text-[#FF5C00] group-hover:border-orange-200 transition-colors"
+                title="Edit avatar"
               >
-                {userTags.map((tag) => (
-                  <option key={tag.tag_id} value={tag.tag_id}>
-                    {tag.tag_id} (Mode: {tag.active_mode})
-                  </option>
-                ))}
-              </select>
-            )}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Type <span className="font-bold text-gray-900">CONFIRM</span> to proceed
+                <Pencil className="w-4 h-4" strokeWidth={2} />
+              </span>
+            </button>
+          </div>
+
+          {/* Form fields */}
+          <div className="space-y-4">
+            {/* Full name input */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="profile-name-input"
+                className="block text-xs font-semibold uppercase tracking-wider text-gray-500"
+              >
+                Full Name
               </label>
               <input
+                id="profile-name-input"
                 type="text"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder="CONFIRM"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                maxLength={50}
+                className="
+                  w-full px-3.5 py-2.5 rounded-lg text-sm text-gray-900 bg-gray-50
+                  border border-gray-200
+                  placeholder:text-gray-400
+                  transition-colors duration-150
+                  focus:outline-none focus:bg-white focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00]
+                "
               />
             </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setUnclaimModalOpen(false)}
-                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitUnclaimTag}
-                disabled={confirmText !== 'CONFIRM' || isUnclaiming || userTags.length === 0}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isUnclaiming ? 'Unclaiming...' : 'Unclaim'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {deleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95">
-            <h3 className="text-lg font-semibold text-gray-900">Delete Profile</h3>
-            <p className="text-sm text-gray-500">
-              This action is permanent and cannot be undone. All your data will be wiped.
-            </p>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Type <span className="font-bold text-gray-900">CONFIRM</span> to proceed
+            {/* Email (read-only) */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="profile-email-display"
+                className="block text-xs font-semibold uppercase tracking-wider text-gray-400"
+              >
+                Email
               </label>
               <input
-                type="text"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder="CONFIRM"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+                id="profile-email-display"
+                type="email"
+                value={email}
+                readOnly
+                aria-describedby="profile-email-hint"
+                className="
+                  w-full px-3.5 py-2.5 rounded-lg text-sm text-gray-500 bg-gray-100
+                  border border-gray-200 cursor-not-allowed select-all
+                  focus:outline-none
+                "
               />
+              <p id="profile-email-hint" className="text-xs text-gray-400">
+                Email cannot be changed.
+              </p>
             </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setDeleteModalOpen(false)}
-                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitDeleteProfile}
-                disabled={confirmText !== 'CONFIRM' || isDeleting}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isDeleting ? 'Deleting...' : 'Delete Permanently'}
-              </button>
-            </div>
+
+            {/* Save button */}
+            <button
+              id="profile-save-button"
+              onClick={handleSave}
+              disabled={!hasChanges || isSaving || !name.trim()}
+              className={`
+                w-full py-2.5 rounded-lg text-sm font-semibold text-white
+                transition-all duration-200
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00] focus-visible:ring-offset-2
+                active:scale-[0.98]
+                ${saved
+                  ? 'bg-emerald-500 hover:bg-emerald-600'
+                  : (!hasChanges || isSaving || !name.trim())
+                    ? 'bg-[#FF5C00] opacity-50 cursor-not-allowed active:scale-100'
+                    : 'bg-[#FF5C00] hover:bg-[#e04e00] shadow-sm'
+                }
+              `}
+            >
+              {isSaving
+                ? 'Saving...'
+                : saved
+                  ? '✓ Saved'
+                  : 'Save Changes'}
+            </button>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="border border-red-200 bg-red-50/30 rounded-xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-red-700 uppercase tracking-wider">
+              Danger Zone
+            </p>
+
+            {/* Unclaim Tag */}
+            <button
+              id="profile-unclaim-tags-button"
+              onClick={openUnclaimModal}
+              className="
+                w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
+                text-red-600 border border-red-200 bg-white
+                hover:bg-red-50 hover:border-red-300
+                transition-colors duration-150
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+                active:scale-[0.98]
+              "
+            >
+              <Tag className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
+              <span>Unclaim Tag</span>
+            </button>
+
+            {/* Delete Profile */}
+            <button
+              id="profile-delete-button"
+              onClick={openDeleteModal}
+              className="
+                w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
+                text-white bg-red-600 border border-red-700
+                hover:bg-red-700
+                transition-colors duration-150
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1
+                active:scale-[0.98]
+              "
+            >
+              <Trash2 className="w-4 h-4 flex-shrink-0" strokeWidth={1.75} />
+              <span>Delete Profile</span>
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    </div>,
+    document.body
+  ) : null
+
+  // ─── Portal: Unclaim Tag Modal ────────────────────────────────────────────────
+
+  const unclaimModal = mounted && unclaimModalOpen ? createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+      role="presentation"
+      onClick={(e) => { if (e.target === e.currentTarget) setUnclaimModalOpen(false) }}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold text-gray-900">Unclaim Tag</h3>
+        <p className="text-sm text-gray-500">
+          Select a tag to unclaim. This will reset its metadata and it will become available for anyone to claim again.
+        </p>
+        {isLoadingTags ? (
+          <p className="text-sm text-gray-400">Loading your tags...</p>
+        ) : userTags.length === 0 ? (
+          <p className="text-sm text-red-500">You don&apos;t own any tags.</p>
+        ) : (
+          <select
+            value={selectedTagToUnclaim}
+            onChange={(e) => setSelectedTagToUnclaim(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5C00]"
+          >
+            {userTags.map((tag) => (
+              <option key={tag.tag_id} value={tag.tag_id}>
+                {tag.tag_id} (Mode: {tag.active_mode})
+              </option>
+            ))}
+          </select>
+        )}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Type <span className="font-bold text-gray-900">CONFIRM</span> to proceed
+          </label>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="CONFIRM"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => setUnclaimModalOpen(false)}
+            className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submitUnclaimTag}
+            disabled={confirmText !== 'CONFIRM' || isUnclaiming || userTags.length === 0}
+            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isUnclaiming ? 'Unclaiming...' : 'Unclaim'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  ) : null
+
+  // ─── Portal: Delete Profile Modal ─────────────────────────────────────────────
+
+  const deleteModal = mounted && deleteModalOpen ? createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+      role="presentation"
+      onClick={(e) => { if (e.target === e.currentTarget) setDeleteModalOpen(false) }}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold text-gray-900">Delete Profile</h3>
+        <p className="text-sm text-gray-500">
+          This action is permanent and cannot be undone. All your data will be wiped.
+        </p>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">
+            Type <span className="font-bold text-gray-900">CONFIRM</span> to proceed
+          </label>
+          <input
+            type="text"
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="CONFIRM"
+            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => setDeleteModalOpen(false)}
+            className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submitDeleteProfile}
+            disabled={confirmText !== 'CONFIRM' || isDeleting}
+            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Permanently'}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  ) : null
+
+  // ─── Render ───────────────────────────────────────────────────────────────────
+
+  return (
+    <>
+      {trigger}
+      {profileModal}
+      {unclaimModal}
+      {deleteModal}
     </>
   )
 }
