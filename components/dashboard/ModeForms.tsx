@@ -92,6 +92,21 @@ export function LostAndFoundForm({ data, onChange }: LostAndFoundFormProps) {
         placeholder="6281234567890"
         helperText="Phone number contacted when the finder taps WhatsApp button"
       />
+      <div className="w-full">
+        <label
+          htmlFor="lf-custom-message"
+          className="block text-sm font-medium text-gray-700 mb-1.5"
+        >
+          Custom Message (Optional)
+        </label>
+        <textarea
+          id="lf-custom-message"
+          value={data.custom_message || ''}
+          onChange={(e) => onChange({ ...data, custom_message: e.target.value })}
+          placeholder="e.g., Please return this to the campus security desk..."
+          className="w-full h-24 p-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+        />
+      </div>
     </div>
   )
 }

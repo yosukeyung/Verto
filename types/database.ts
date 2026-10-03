@@ -35,6 +35,7 @@ export interface LostAndFoundMetadata {
   owner_name: string
   item_name: string
   wa_number: string
+  custom_message?: string | null
 }
 
 export interface EventHubMetadata {

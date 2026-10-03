@@ -22,7 +22,7 @@ const COLOR_MAP: Record<ThemeColor, { hex: string; underlineClass: string }> = {
 }
 
 export function LostFoundView({ metadata, className, isPreview = false }: LostFoundViewProps) {
-  const { item_name = 'Lost Item', owner_name = 'Owner', wa_number = '' } = metadata
+  const { item_name = 'Lost Item', owner_name = 'Owner', wa_number = '', custom_message = '' } = metadata
 
   const themeFontKey: ThemeFont = (metadata.theme_font as ThemeFont) || 'sans'
   const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) || 'orange'
@@ -60,8 +60,10 @@ export function LostFoundView({ metadata, className, isPreview = false }: LostFo
           <p className="text-base text-gray-600">
             Owner: <span className="font-semibold text-gray-900">{owner_name || (isPreview ? 'Owner Name' : 'Owner')}</span>
           </p>
-          <p className="text-xs text-gray-500 max-w-xs mx-auto mt-3">
-            Thank you for scanning this tag. You can reach out directly to the owner using the button below.
+          <p className="text-xs text-gray-500 max-w-xs mx-auto mt-3 whitespace-pre-wrap">
+            {custom_message && custom_message.trim().length > 0 
+              ? custom_message 
+              : 'Thank you for scanning this tag. You can reach out directly to the owner using the button below.'}
           </p>
         </div>
 
