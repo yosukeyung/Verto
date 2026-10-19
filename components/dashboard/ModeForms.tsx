@@ -95,7 +95,7 @@ export function LostAndFoundForm({ data, onChange }: LostAndFoundFormProps) {
       <div className="w-full">
         <label
           htmlFor="lf-custom-message"
-          className="block text-sm font-medium text-gray-700 mb-1.5"
+          className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1.5"
         >
           Custom Message (Optional)
         </label>
@@ -104,7 +104,7 @@ export function LostAndFoundForm({ data, onChange }: LostAndFoundFormProps) {
           value={data.custom_message || ''}
           onChange={(e) => onChange({ ...data, custom_message: e.target.value })}
           placeholder="e.g., Please return this to the campus security desk..."
-          className="w-full h-24 p-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
+          className="w-full h-24 p-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white dark:border-neutral-800 dark:text-white dark:placeholder:text-neutral-500 dark:bg-neutral-950 transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
         />
       </div>
     </div>

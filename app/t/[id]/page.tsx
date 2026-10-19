@@ -3,7 +3,7 @@ import { SocialView } from '@/components/landing/SocialView'
 import { LostFoundView } from '@/components/landing/LostFoundView'
 import { EventHubView } from '@/components/landing/EventHubView'
 import { NotFoundView } from '@/components/landing/NotFoundView'
-import type { TagRow, ThemeFont, ThemeColor } from '@/types/database'
+import type { TagRow, ThemeFont, ThemeColor, PageTheme } from '@/types/database'
 
 interface TagPageProps {
   params: Promise<{ id: string }>
@@ -36,20 +36,38 @@ export default async function TagPage({ params }: TagPageProps) {
   const rawMetadata = (tag.metadata as Record<string, any>) || {}
   const theme_font: ThemeFont = rawMetadata.theme_font || 'sans'
   const theme_color: ThemeColor = rawMetadata.theme_color || 'orange'
+  const page_theme: PageTheme = (rawMetadata.page_theme || rawMetadata.pageTheme) === 'dark' ? 'dark' : 'light'
+
   const metadata = {
     ...rawMetadata,
     theme_font,
     theme_color,
+    page_theme,
+    pageTheme: page_theme,
   }
 
-  switch (tag.active_mode) {
-    case 'social':
-      return <SocialView metadata={metadata} />
-    case 'lost_and_found':
-      return <LostFoundView metadata={metadata} />
-    case 'event_hub':
-      return <EventHubView metadata={metadata} />
-    default:
-      return <NotFoundView />
+  const isDark = page_theme === 'dark'
+
+  const renderContent = () => {
+    switch (tag.active_mode) {
+      case 'social':
+        return <SocialView metadata={metadata} />
+      case 'lost_and_found':
+        return <LostFoundView metadata={metadata} />
+      case 'event_hub':
+        return <EventHubView metadata={metadata} />
+      default:
+        return <NotFoundView />
+    }
   }
+
+  return (
+    <div
+      className={`min-h-screen transition-colors duration-200 ${
+        isDark ? 'dark bg-neutral-900 text-white' : 'bg-white text-gray-900'
+      }`}
+    >
+      {renderContent()}
+    </div>
+  )
 }

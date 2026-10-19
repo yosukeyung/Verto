@@ -11,10 +11,10 @@ export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorPro
   if (tags.length <= 1) {
     return (
       <div id="tour-tag-selector" className="flex items-center gap-2">
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <span className="text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wider">
           Active Tag:
         </span>
-        <span className="px-3 py-1 rounded-md border border-orange-500 bg-orange-50 text-sm font-mono font-medium text-orange-600">
+        <span className="px-3 py-1 rounded-md border border-orange-500 bg-orange-50 dark:bg-orange-500/10 text-sm font-mono font-medium text-orange-600 dark:text-orange-400">
           {selectedTagId}
         </span>
       </div>
@@ -23,7 +23,7 @@ export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorPro
 
   return (
     <div id="tour-tag-selector" className="w-full">
-      <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+      <div className="text-xs font-medium text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
         Select Tag ({tags.length})
       </div>
       <div 
@@ -42,8 +42,8 @@ export function TagSelector({ tags, selectedTagId, onSelectTag }: TagSelectorPro
               onClick={() => onSelectTag(tag.tag_id)}
               className={`px-3 py-2 rounded-lg text-sm font-mono font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
                 isActive
-                  ? 'border border-orange-500 bg-orange-50 text-orange-600'
-                  : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300'
+                  ? 'border border-orange-500 bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400'
+                  : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-300 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:border-neutral-700'
               }`}
             >
               {tag.tag_id}

@@ -9,7 +9,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={`bg-white border border-gray-200 rounded-xl p-4 ${
+        className={`bg-white border border-gray-200 dark:bg-neutral-950 dark:border-neutral-800 rounded-xl p-4 ${
           interactive
             ? 'hover:shadow-md transition-shadow duration-150 cursor-pointer'
             : ''

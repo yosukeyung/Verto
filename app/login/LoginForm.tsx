@@ -33,8 +33,6 @@ function LoginForm() {
       return
     }
 
-    localStorage.setItem('verto_session_start', Date.now().toString())
-
     if (tagId) {
       router.push(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`)
     } else {

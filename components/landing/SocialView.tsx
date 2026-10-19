@@ -109,9 +109,11 @@ export function SocialView({ metadata, className, isPreview = false }: SocialVie
   // Parse theme settings with fallbacks
   const themeFontKey: ThemeFont = (metadata.theme_font as ThemeFont) || 'sans'
   const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) || 'orange'
+  const isDark = (metadata.page_theme || metadata.pageTheme) === 'dark'
 
   const fontClass = FONT_MAP[themeFontKey] || FONT_MAP.sans
   const colorConfig = COLOR_MAP[themeColorKey] || COLOR_MAP.orange
+  const effectiveColor = themeColorKey === 'black' ? (isDark ? '#FFFFFF' : '#000000') : colorConfig.hex
 
   // In live preview mode, provide realistic sample links if user has not entered any yet
   const showFallbackLinks = isPreview && !wa && !ig && !linkedin
@@ -125,7 +127,9 @@ export function SocialView({ metadata, className, isPreview = false }: SocialVie
 
   return (
     <main
-      className={`bg-white flex flex-col justify-between ${
+      className={`flex flex-col justify-between transition-colors duration-150 ${
+        isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
+      } ${
         className || 'min-h-screen px-4 py-12'
       } ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
       style={{ '--theme-accent': colorConfig.hex } as React.CSSProperties}
@@ -133,15 +137,15 @@ export function SocialView({ metadata, className, isPreview = false }: SocialVie
       <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center text-center">
         {/* Profile Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold leading-tight text-gray-900">
+          <h1 className={`text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
             {name || (isPreview ? 'Your Full Name' : 'Verto User')}
           </h1>
           <div
-            className={`w-8 border-b-2 ${colorConfig.underlineClass} mx-auto mt-2 mb-3`}
-            style={{ borderColor: colorConfig.hex }}
+            className="w-8 border-b-2 mx-auto mt-2 mb-3"
+            style={{ borderColor: effectiveColor }}
           />
           {(bio || isPreview) && (
-            <p className="text-base text-gray-500 leading-normal max-w-xs mx-auto">
+            <p className={`text-base leading-normal max-w-xs mx-auto ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
               {bio || (isPreview ? 'Add a brief bio or headline here' : '')}
             </p>
           )}
@@ -154,17 +158,21 @@ export function SocialView({ metadata, className, isPreview = false }: SocialVie
               href={waUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-full h-11 px-5 rounded-lg border border-gray-200 ${colorConfig.buttonHoverClass} text-gray-900 text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${colorConfig.focusRingClass}`}
+              className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                isDark
+                  ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800'
+                  : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50'
+              }`}
             >
               <div className="flex items-center gap-3">
                 <MessageCircle
-                  className={`w-5 h-5 shrink-0 ${colorConfig.iconColorClass}`}
+                  className="w-5 h-5 shrink-0"
                   strokeWidth={1.75}
-                  style={{ color: colorConfig.hex }}
+                  style={{ color: effectiveColor }}
                 />
                 <span>WhatsApp</span>
               </div>
-              <ExternalLink className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.75} />
+              <ExternalLink className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-500' : 'text-gray-400'}`} strokeWidth={1.75} />
             </a>
           )}
 
@@ -173,16 +181,20 @@ export function SocialView({ metadata, className, isPreview = false }: SocialVie
               href={igUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-full h-11 px-5 rounded-lg border border-gray-200 ${colorConfig.buttonHoverClass} text-gray-900 text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${colorConfig.focusRingClass}`}
+              className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                isDark
+                  ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800'
+                  : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50'
+              }`}
             >
               <div className="flex items-center gap-3">
                 <InstagramIcon
-                  className={`w-5 h-5 shrink-0 ${colorConfig.iconColorClass}`}
-                  style={{ color: colorConfig.hex }}
+                  className="w-5 h-5 shrink-0"
+                  style={{ color: effectiveColor }}
                 />
                 <span>Instagram</span>
               </div>
-              <ExternalLink className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.75} />
+              <ExternalLink className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-500' : 'text-gray-400'}`} strokeWidth={1.75} />
             </a>
           )}
 
@@ -191,23 +203,27 @@ export function SocialView({ metadata, className, isPreview = false }: SocialVie
               href={linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-full h-11 px-5 rounded-lg border border-gray-200 ${colorConfig.buttonHoverClass} text-gray-900 text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${colorConfig.focusRingClass}`}
+              className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                isDark
+                  ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800'
+                  : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50'
+              }`}
             >
               <div className="flex items-center gap-3">
                 <LinkedinIcon
-                  className={`w-5 h-5 shrink-0 ${colorConfig.iconColorClass}`}
-                  style={{ color: colorConfig.hex }}
+                  className="w-5 h-5 shrink-0"
+                  style={{ color: effectiveColor }}
                 />
                 <span>LinkedIn</span>
               </div>
-              <ExternalLink className="w-4 h-4 text-gray-400 shrink-0" strokeWidth={1.75} />
+              <ExternalLink className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-500' : 'text-gray-400'}`} strokeWidth={1.75} />
             </a>
           )}
         </div>
       </div>
 
       <footer className="text-center pt-8">
-        <p className="text-xs text-gray-400 tracking-wide">
+        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-500' : 'text-gray-400'}`}>
           Powered by Verto
         </p>
       </footer>

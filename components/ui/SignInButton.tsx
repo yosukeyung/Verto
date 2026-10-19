@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Lottie from "lottie-react";
 import catAnimation from "@/public/cat-loading.json";
@@ -19,15 +20,26 @@ export function SignInButton({
 }: SignInButtonProps) {
   const router = useRouter();
   const [showOverlay, setShowOverlay] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    setMounted(true);
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (showOverlay) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }
+  }, [showOverlay]);
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onClick?.(e);
@@ -36,6 +48,16 @@ export function SignInButton({
       setShowOverlay(true);
     }, 800);
   };
+
+  const overlay = showOverlay ? (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+      <Lottie
+        animationData={catAnimation}
+        loop={true}
+        className="w-64 h-64 sm:w-80 sm:h-80"
+      />
+    </div>
+  ) : null;
 
   return (
     <>
@@ -48,15 +70,7 @@ export function SignInButton({
         <span>{children}</span>
       </button>
 
-      {showOverlay && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-          <Lottie
-            animationData={catAnimation}
-            loop={true}
-            className="w-64 h-64 sm:w-80 sm:h-80"
-          />
-        </div>
-      )}
+      {mounted && overlay ? createPortal(overlay, document.body) : overlay}
     </>
   );
 }

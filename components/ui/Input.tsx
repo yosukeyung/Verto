@@ -15,7 +15,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 mb-1.5"
+            className="block text-sm font-medium text-gray-700 dark:text-neutral-300 mb-1.5"
           >
             {label}
             {required && <span className="text-red-500 ml-1" aria-hidden="true">*</span>}
@@ -29,11 +29,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           disabled={disabled}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
-          className={`w-full h-11 px-3 rounded-lg border text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 ${
+          className={`w-full h-11 px-3 rounded-lg border text-base text-gray-900 placeholder:text-gray-400 bg-white dark:text-white dark:bg-neutral-950 dark:placeholder:text-neutral-500 transition-colors duration-150 ${
             error
               ? 'border-red-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500'
-              : 'border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500'
-          } disabled:bg-gray-50 disabled:text-gray-400 ${className}`.trim()}
+              : 'border-gray-200 dark:border-neutral-800 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500'
+          } disabled:bg-gray-50 disabled:text-gray-400 dark:disabled:bg-neutral-900 dark:disabled:text-neutral-500 ${className}`.trim()}
           {...props}
         />
 
@@ -42,7 +42,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {error}
           </p>
         ) : helperText ? (
-          <p id={`${inputId}-helper`} className="text-xs text-gray-500 mt-1.5">
+          <p id={`${inputId}-helper`} className="text-xs text-gray-500 dark:text-neutral-400 mt-1.5">
             {helperText}
           </p>
         ) : null}

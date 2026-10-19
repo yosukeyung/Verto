@@ -24,18 +24,28 @@ export function Navbar({ rightAction }: NavbarProps) {
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-300 ease-in-out py-3 ${isScrolled
-        ? "bg-white/75 backdrop-blur-lg border-b border-gray-100 shadow-sm"
+        ? "bg-white/75 backdrop-blur-lg border-b border-gray-100 shadow-sm dark:bg-black/75 dark:border-neutral-800"
         : "bg-transparent border-b border-transparent"
         }`}
     >
       <div className="max-w-2xl mx-auto px-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center rounded outline-none">
+        <Link href="/" className="flex items-center rounded outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+          {/* Light Mode Logo */}
           <Image
-            src="/logo_remove.png"
+            src="/logo_light.png"
             alt="Verto"
             width={120}
             height={38}
-            className="h-9 w-auto object-contain"
+            className="h-9 w-auto object-contain block dark:hidden"
+            priority
+          />
+          {/* Dark Mode Logo */}
+          <Image
+            src="/logo_dark.png"
+            alt="Verto"
+            width={120}
+            height={38}
+            className="h-9 w-auto object-contain hidden dark:block"
             priority
           />
         </Link>

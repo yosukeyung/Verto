@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Radio } from 'lucide-react'
 import type { TagRow } from '@/types/database'
 import { TagSelector } from '@/components/dashboard/TagSelector'
@@ -8,42 +8,32 @@ import { TagSettingsForm } from '@/components/dashboard/TagSettingsForm'
 import { Card } from '@/components/ui/Card'
 import { Navbar } from '@/components/layout/Navbar'
 import { ProfileModal } from '@/components/ui/ProfileModal'
+import { ThemeSwitch } from '@/components/ui/ThemeSwitch'
 import { DashboardTutorial } from '@/components/dashboard/DashboardTutorial'
 import { signOutAction } from '@/app/dashboard/actions'
-import { useSessionTimeout } from '@/hooks/useSessionTimeout'
+import { UserProvider, useUser, type UserProfile } from '@/components/providers/UserContext'
 
 interface DashboardManagerProps {
   initialTags: TagRow[]
   userEmail: string
   initialSelectedTagId?: string
+  initialProfile: UserProfile
 }
 
-export function DashboardManager({
+function DashboardContent({
   initialTags,
   userEmail,
   initialSelectedTagId,
-}: DashboardManagerProps) {
-  useSessionTimeout()
-  
+}: Omit<DashboardManagerProps, 'initialProfile'>) {
+  const { profile } = useUser()
   const [tags, setTags] = useState<TagRow[]>(initialTags)
   const [selectedTagId, setSelectedTagId] = useState<string>(
     initialSelectedTagId && initialTags.some((t) => t.tag_id === initialSelectedTagId)
       ? initialSelectedTagId
       : initialTags[0]?.tag_id || ''
   )
-  const [profileFullName, setProfileFullName] = useState<string>('')
 
   const activeTag = tags.find((t) => t.tag_id === selectedTagId)
-
-  // Load profile full_name for auto-populating new tags
-  useEffect(() => {
-    fetch('/api/profile')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.full_name) setProfileFullName(data.full_name)
-      })
-      .catch(() => {})
-  }, [])
 
   const handleSelectTag = (tagId: string) => {
     setSelectedTagId(tagId)
@@ -56,25 +46,28 @@ export function DashboardManager({
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-black flex flex-col">
       {/* Onboarding Tutorial */}
       <DashboardTutorial hasTags={tags.length > 0} />
 
       {/* Top Navbar */}
       <Navbar
         rightAction={
-          <ProfileModal
-            onSignOut={() => {
-              signOutAction()
-            }}
-          />
+          <div className="flex items-center gap-2">
+            <ThemeSwitch />
+            <ProfileModal
+              onSignOut={() => {
+                signOutAction()
+              }}
+            />
+          </div>
         }
       />
 
       {/* Main Content Area: Centered, Focused Mobile-First Layout */}
       <main className="flex-1 max-w-xl w-full mx-auto px-4 pt-18 pb-16 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold leading-tight text-gray-900">
+          <h1 className="text-2xl font-bold leading-tight text-gray-900 dark:text-white">
             Dashboard
           </h1>
           <div className="w-8 border-b border-orange-500 mt-2" />
@@ -83,13 +76,13 @@ export function DashboardManager({
         {/* Empty State per DESIGN.md Section 14 */}
         {tags.length === 0 ? (
           <Card className="text-center py-12 px-6">
-            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4 text-gray-500">
+            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-neutral-900 flex items-center justify-center mx-auto mb-4 text-gray-500 dark:text-neutral-400">
               <Radio className="w-6 h-6" strokeWidth={1.75} />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               No tags connected yet
             </h2>
-            <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
+            <p className="text-sm text-gray-500 dark:text-neutral-400 max-w-md mx-auto mb-6">
               You have not claimed any tags yet. Tap an NFC tag to start registration, or contact support.
             </p>
           </Card>
@@ -103,10 +96,10 @@ export function DashboardManager({
             />
 
             {/* Public URL display */}
-            <div className="py-2 px-3 rounded-lg bg-gray-50 border border-gray-200">
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-600">
+            <div className="py-2 px-3 rounded-lg bg-gray-50 border border-gray-200 dark:bg-neutral-950 dark:border-neutral-800">
+              <div className="flex items-center gap-2 text-xs font-mono text-gray-600 dark:text-neutral-400">
                 <span>Public URL:</span>
-                <span className="font-semibold text-gray-900">/t/{selectedTagId}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">/t/{selectedTagId}</span>
               </div>
             </div>
 
@@ -114,12 +107,29 @@ export function DashboardManager({
             <TagSettingsForm
               key={selectedTagId}
               activeTag={activeTag}
-              profileFullName={profileFullName}
+              profileFullName={profile.full_name}
               onSaveSuccess={handleSaveSuccess}
             />
           </>
         ) : null}
       </main>
     </div>
+  )
+}
+
+export function DashboardManager({
+  initialTags,
+  userEmail,
+  initialSelectedTagId,
+  initialProfile,
+}: DashboardManagerProps) {
+  return (
+    <UserProvider initialProfile={initialProfile}>
+      <DashboardContent
+        initialTags={initialTags}
+        userEmail={userEmail}
+        initialSelectedTagId={initialSelectedTagId}
+      />
+    </UserProvider>
   )
 }

@@ -18,6 +18,7 @@ export type ActiveMode = 'social' | 'lost_and_found' | 'event_hub'
 
 export type ThemeFont = 'sans' | 'serif' | 'mono'
 export type ThemeColor = 'orange' | 'black' | 'emerald' | 'blue'
+export type PageTheme = 'light' | 'dark'
 
 // ─── Metadata shapes (stored in tags.metadata JSONB) ─────────────────────────
 
@@ -29,6 +30,8 @@ export interface SocialMetadata {
   linkedin?: string | null
   theme_font?: ThemeFont
   theme_color?: ThemeColor
+  page_theme?: PageTheme
+  pageTheme?: PageTheme
 }
 
 export interface LostAndFoundMetadata {
@@ -36,6 +39,10 @@ export interface LostAndFoundMetadata {
   item_name: string
   wa_number: string
   custom_message?: string | null
+  theme_font?: ThemeFont
+  theme_color?: ThemeColor
+  page_theme?: PageTheme
+  pageTheme?: PageTheme
 }
 
 export interface EventHubMetadata {
@@ -44,6 +51,10 @@ export interface EventHubMetadata {
   link_1?: string | null
   link_2?: string | null
   link_3?: string | null
+  theme_font?: ThemeFont
+  theme_color?: ThemeColor
+  page_theme?: PageTheme
+  pageTheme?: PageTheme
 }
 
 export type TagMetadata = Record<string, any>
@@ -55,6 +66,8 @@ export interface UserRow {
   email: string
   role: UserRole
   created_at: string
+  full_name?: string | null
+  avatar_id?: string | null
 }
 
 export interface TagRow {
@@ -95,12 +108,16 @@ export type Database = {
           email: string
           id: string
           role?: UserRole
+          full_name?: string | null
+          avatar_id?: string | null
         }
         Update: {
           created_at?: string
           email?: string
           id?: string
           role?: UserRole
+          full_name?: string | null
+          avatar_id?: string | null
         }
         Relationships: []
       }

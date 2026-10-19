@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { DashboardManager } from '@/components/dashboard/DashboardManager'
 import type { TagRow } from '@/types/database'
+import type { UserProfile } from '@/components/providers/UserContext'
 
 interface DashboardPageProps {
   searchParams: Promise<{ tag?: string }>
@@ -29,11 +30,30 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     console.error('Error fetching tags:', tagsError)
   }
 
+  // Pre-fetch user profile server-side to eliminate stale avatar flicker
+  const serviceClient = await createServiceClient()
+  const { data: userProfile, error: profileError } = await (serviceClient.from('users') as any)
+    .select('full_name, avatar_id, email')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profileError) {
+    console.error('Error fetching profile server-side:', profileError)
+  }
+
+  const initialProfile: UserProfile = {
+    email: user.email || userProfile?.email || '',
+    full_name: userProfile?.full_name || '',
+    avatar_id: userProfile?.avatar_id || 'love',
+  }
+
   return (
     <DashboardManager
       initialTags={(tags as TagRow[]) || []}
       userEmail={user.email || ''}
       initialSelectedTagId={resolvedSearchParams?.tag}
+      initialProfile={initialProfile}
     />
   )
 }
+

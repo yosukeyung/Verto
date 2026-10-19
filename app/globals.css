@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "driver.js/dist/driver.css";
 
+/* next-themes toggles `.dark` on <html>; bind Tailwind's dark: variant to it */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: var(--font-sans), 'Inter', system-ui, -apple-system, sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
@@ -23,11 +26,11 @@
   --gray-950: #0A0A0A;
   --black: #000000;
 
-  --orange-50:      #FFF7ED;
-  --orange-100:     #FFEDD5;
-  --orange-500:     #F97316;
-  --orange-600:     #EA580C;
-  --orange-700:     #C2410C;
+  --orange-50: #FFF7ED;
+  --orange-100: #FFEDD5;
+  --orange-500: #F97316;
+  --orange-600: #EA580C;
+  --orange-700: #C2410C;
 
   --red-500: #EF4444;
   --red-50: #FEF2F2;
@@ -168,6 +171,7 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+
     &::-webkit-scrollbar {
       display: none;
     }
@@ -183,6 +187,7 @@
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -195,6 +200,58 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-toast {
+    animation: none;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Theme switch: radial reveal (View Transitions API)
+   --theme-x / --theme-y / --theme-r are set on <html> by ThemeSwitch right
+   before document.startViewTransition() runs.
+───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0px at var(--theme-x, 50%) var(--theme-y, 0px));
+  }
+
+  to {
+    clip-path: circle(var(--theme-r, 150vmax) at var(--theme-x, 50%) var(--theme-y, 0px));
+  }
+}
+
+html.theme-transition::view-transition-old(root),
+html.theme-transition::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html.theme-transition::view-transition-old(root) {
+  z-index: 1;
+}
+
+html.theme-transition::view-transition-new(root) {
+  z-index: 2;
+  animation: theme-reveal 0.85s ease-out both;
+}
+
+/* Freeze element-level colour transitions so the new snapshot shows final colours */
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition: none !important;
+}
+
+/* Fallback for browsers without startViewTransition: short colour fade */
+html.theme-fade,
+html.theme-fade *,
+html.theme-fade *::before,
+html.theme-fade *::after {
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, fill 180ms ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition::view-transition-new(root) {
     animation: none;
   }
 }
@@ -225,6 +282,7 @@
     opacity: 0;
     transform: scale(0.97);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -315,26 +373,90 @@
 .driver-popover.verto-driver-popover .driver-popover-arrow {
   border: 6px solid #ffffff !important;
 }
+
 .driver-popover.verto-driver-popover .driver-popover-arrow-side-left {
   border-left-color: #ffffff !important;
   border-top-color: transparent !important;
   border-bottom-color: transparent !important;
   border-right-color: transparent !important;
 }
+
 .driver-popover.verto-driver-popover .driver-popover-arrow-side-right {
   border-right-color: #ffffff !important;
   border-top-color: transparent !important;
   border-bottom-color: transparent !important;
   border-left-color: transparent !important;
 }
+
 .driver-popover.verto-driver-popover .driver-popover-arrow-side-top {
   border-top-color: #ffffff !important;
   border-bottom-color: transparent !important;
   border-left-color: transparent !important;
   border-right-color: transparent !important;
 }
+
 .driver-popover.verto-driver-popover .driver-popover-arrow-side-bottom {
   border-bottom-color: #ffffff !important;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+}
+
+/* Driver.js popover: dark theme */
+.dark .driver-popover.verto-driver-popover {
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
+  border-color: #262626 !important;
+}
+
+.dark .driver-popover.verto-driver-popover .driver-popover-title {
+  color: #ffffff !important;
+}
+
+.dark .driver-popover.verto-driver-popover .driver-popover-description {
+  color: #d4d4d4 !important;
+}
+
+.dark .driver-popover.verto-driver-popover .driver-popover-footer {
+  border-top-color: #262626 !important;
+}
+
+.dark .driver-popover.verto-driver-popover .verto-tour-skip-btn {
+  color: #a3a3a3 !important;
+}
+
+.dark .driver-popover.verto-driver-popover .verto-tour-skip-btn:hover {
+  color: #ffffff !important;
+  background-color: #171717 !important;
+}
+
+.dark .driver-popover.verto-driver-popover .driver-popover-arrow {
+  border-color: #0a0a0a !important;
+}
+
+.dark .driver-popover.verto-driver-popover .driver-popover-arrow-side-left {
+  border-left-color: #0a0a0a !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-right-color: transparent !important;
+}
+
+.dark .driver-popover.verto-driver-popover .driver-popover-arrow-side-right {
+  border-right-color: #0a0a0a !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+}
+
+.dark .driver-popover.verto-driver-popover .driver-popover-arrow-side-top {
+  border-top-color: #0a0a0a !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+}
+
+.dark .driver-popover.verto-driver-popover .driver-popover-arrow-side-bottom {
+  border-bottom-color: #0a0a0a !important;
   border-top-color: transparent !important;
   border-left-color: transparent !important;
   border-right-color: transparent !important;

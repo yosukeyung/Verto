@@ -27,7 +27,7 @@ const MODES: { id: ActiveMode; title: string; description: string }[] = [
 export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
   return (
     <div id="tour-tag-mode" className="space-y-3">
-      <div className="text-sm font-semibold text-gray-900 mb-1">
+      <div className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
         Active Tag Mode
       </div>
       <div role="radiogroup" aria-label="Select Tag Mode" className="space-y-2">
@@ -48,8 +48,8 @@ export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
               }}
               className={`w-full p-4 rounded-lg cursor-pointer transition-colors duration-150 flex items-start gap-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${
                 isSelected
-                  ? 'border-l-2 border-orange-500 bg-orange-50 border-t border-r border-b border-orange-200'
-                  : 'border border-gray-200 bg-white hover:bg-gray-50'
+                  ? 'border-l-2 border-orange-500 bg-orange-50 border-t border-r border-b border-orange-200 dark:bg-orange-500/10 dark:border-orange-500/40'
+                  : 'border border-gray-200 bg-white hover:bg-gray-50 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-900'
               }`}
             >
               <div className="pt-0.5">
@@ -57,7 +57,7 @@ export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
                   className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                     isSelected
                       ? 'border-orange-500 bg-orange-500'
-                      : 'border-gray-400 bg-white'
+                      : 'border-gray-400 bg-white dark:border-neutral-600 dark:bg-neutral-950'
                   }`}
                 >
                   {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
@@ -66,14 +66,14 @@ export function ModeSelector({ activeMode, onChangeMode }: ModeSelectorProps) {
               <div className="flex-1">
                 <div
                   className={`text-sm font-semibold ${
-                    isSelected ? 'text-orange-900' : 'text-gray-900'
+                    isSelected ? 'text-orange-900 dark:text-orange-400' : 'text-gray-900 dark:text-white'
                   }`}
                 >
                   {mode.title}
                 </div>
                 <div
                   className={`text-xs mt-0.5 ${
-                    isSelected ? 'text-orange-700' : 'text-gray-500'
+                    isSelected ? 'text-orange-700 dark:text-orange-200' : 'text-gray-500 dark:text-neutral-400'
                   }`}
                 >
                   {mode.description}
