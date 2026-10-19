@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Navbar } from '@/components/layout/Navbar'
 
@@ -13,6 +13,7 @@ function LoginForm() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,6 +21,12 @@ function LoginForm() {
     e.preventDefault()
     setError(null)
     setLoading(true)
+
+    try {
+      localStorage.removeItem('hasSeenTutorial')
+    } catch {
+      // Ignore localStorage error
+    }
 
     const supabase = createClient()
     const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -97,16 +104,30 @@ function LoginForm() {
               >
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full h-11 pl-3 pr-10 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:text-gray-600"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" strokeWidth={1.75} />
+                  ) : (
+                    <Eye className="w-5 h-5" strokeWidth={1.75} />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="pt-2">

@@ -7,31 +7,49 @@ import { createClient } from '@/lib/supabase/client'
 interface DashboardTutorialProps {
   /** Optional flag: set to false if tags are not yet loaded or empty */
   hasTags?: boolean
+  /** Current authenticated user ID to scope localStorage keys */
+  userId?: string
+  /** Authoritative server-side flag indicating whether user completed onboarding */
+  initialHasCompletedOnboarding?: boolean
 }
 
-const TUTORIAL_STORAGE_KEY = 'hasSeenTutorial'
+const LEGACY_STORAGE_KEY = 'hasSeenTutorial'
 
-export function DashboardTutorial({ hasTags = true }: DashboardTutorialProps) {
+function getStorageKey(uid?: string) {
+  return uid ? `hasSeenTutorial_${uid}` : LEGACY_STORAGE_KEY
+}
+
+export function DashboardTutorial({
+  hasTags = true,
+  userId,
+  initialHasCompletedOnboarding,
+}: DashboardTutorialProps) {
   const driverInstanceRef = useRef<Driver | null>(null)
 
   const markComplete = useCallback(async () => {
-    // 1. Synchronously set localStorage flag
+    // 1. Scoped localStorage write to prevent cross-account bleed
     try {
-      localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true')
+      const key = getStorageKey(userId)
+      localStorage.setItem(key, 'true')
+      // Purge legacy un-scoped key
+      localStorage.removeItem(LEGACY_STORAGE_KEY)
     } catch (e) {
       console.warn('[DashboardTutorial] localStorage write failed:', e)
     }
 
-    // 2. Persist to Supabase user metadata
+    // 2. Persist to Supabase user metadata (authoritative source of truth)
     try {
       const supabase = createClient()
       await supabase.auth.updateUser({
-        data: { hasSeenTutorial: true },
+        data: {
+          has_completed_onboarding: true,
+          hasSeenTutorial: true,
+        },
       })
     } catch (err) {
       console.warn('[DashboardTutorial] Supabase user metadata update failed:', err)
     }
-  }, [])
+  }, [userId])
 
   const startTutorial = useCallback(() => {
     const steps: DriveStep[] = [
@@ -119,19 +137,26 @@ export function DashboardTutorial({ hasTags = true }: DashboardTutorialProps) {
     // Only trigger if tags exist (the 4-step tour targets tag controls)
     if (!hasTags) return
 
-    // 1. Fast check: localStorage
-    try {
-      const localSeen = localStorage.getItem(TUTORIAL_STORAGE_KEY)
-      if (localSeen === 'true') {
-        return
+    // 1. Authoritative check: if server confirmed user completed onboarding, exit immediately
+    if (initialHasCompletedOnboarding === true) {
+      return
+    }
+
+    // 2. Fast check: user-scoped localStorage (never generic un-scoped key)
+    if (userId) {
+      try {
+        const localSeen = localStorage.getItem(getStorageKey(userId))
+        if (localSeen === 'true') {
+          return
+        }
+      } catch {
+        // localStorage may fail in restricted/private modes
       }
-    } catch {
-      // localStorage may fail in restricted/private modes
     }
 
     let isCancelled = false
 
-    // 2. Check Supabase metadata if not found in localStorage
+    // 3. Fallback verification against Supabase user metadata (if not already verified server-side)
     const verifyAndTrigger = async () => {
       try {
         const supabase = createClient()
@@ -139,12 +164,20 @@ export function DashboardTutorial({ hasTags = true }: DashboardTutorialProps) {
           data: { user },
         } = await supabase.auth.getUser()
 
-        if (user?.user_metadata?.hasSeenTutorial) {
-          localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true')
+        const isCompleted = Boolean(
+          user?.user_metadata?.has_completed_onboarding || user?.user_metadata?.hasSeenTutorial
+        )
+
+        if (isCompleted) {
+          if (user?.id) {
+            try {
+              localStorage.setItem(getStorageKey(user.id), 'true')
+            } catch {}
+          }
           return
         }
       } catch (err) {
-        // Network or auth error: continue with local onboarding flow
+        console.warn('[DashboardTutorial] Supabase verification error:', err)
       }
 
       if (isCancelled) return
@@ -166,7 +199,7 @@ export function DashboardTutorial({ hasTags = true }: DashboardTutorialProps) {
         driverInstanceRef.current.destroy()
       }
     }
-  }, [hasTags, startTutorial])
+  }, [hasTags, userId, initialHasCompletedOnboarding, startTutorial])
 
   return null
 }

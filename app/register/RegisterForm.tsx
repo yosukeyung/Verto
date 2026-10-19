@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { AlertCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Navbar } from '@/components/layout/Navbar'
 
@@ -18,6 +18,8 @@ function RegisterForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -38,6 +40,19 @@ function RegisterForm() {
     }
 
     setLoading(true)
+
+    // Clear any previous session tutorial flags to guarantee new account gets onboarding
+    try {
+      localStorage.removeItem('hasSeenTutorial')
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('hasSeenTutorial')) {
+          localStorage.removeItem(key)
+        }
+      })
+    } catch {
+      // Ignore localStorage error
+    }
+
     const supabase = createClient()
 
     const randomAvatarId = AVATAR_IDS[Math.floor(Math.random() * AVATAR_IDS.length)]
@@ -61,7 +76,11 @@ function RegisterForm() {
 
     if (data.session) {
       // Session immediately active, route to claim flow
-      router.push(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`)
+      if (tagId) {
+        router.push(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`)
+      } else {
+        router.push('/dashboard')
+      }
       router.refresh()
     } else {
       setNotice('Registration successful. Please check your email to verify your account.')
@@ -153,17 +172,31 @@ function RegisterForm() {
               >
                 Password
               </label>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
-                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="w-full h-11 pl-3 pr-10 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:text-gray-600"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" strokeWidth={1.75} />
+                  ) : (
+                    <Eye className="w-5 h-5" strokeWidth={1.75} />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
@@ -173,17 +206,31 @@ function RegisterForm() {
               >
                 Confirm Password
               </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                required
-                minLength={6}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repeat password"
-                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              />
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat password"
+                  className="w-full h-11 pl-3 pr-10 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none focus-visible:text-gray-600"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" strokeWidth={1.75} />
+                  ) : (
+                    <Eye className="w-5 h-5" strokeWidth={1.75} />
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="pt-2">

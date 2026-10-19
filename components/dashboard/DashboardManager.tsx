@@ -16,6 +16,8 @@ import { UserProvider, useUser, type UserProfile } from '@/components/providers/
 interface DashboardManagerProps {
   initialTags: TagRow[]
   userEmail: string
+  userId?: string
+  hasCompletedOnboarding?: boolean
   initialSelectedTagId?: string
   initialProfile: UserProfile
 }
@@ -23,6 +25,8 @@ interface DashboardManagerProps {
 function DashboardContent({
   initialTags,
   userEmail,
+  userId,
+  hasCompletedOnboarding,
   initialSelectedTagId,
 }: Omit<DashboardManagerProps, 'initialProfile'>) {
   const { profile } = useUser()
@@ -48,7 +52,11 @@ function DashboardContent({
   return (
     <div className="min-h-screen bg-white dark:bg-black flex flex-col">
       {/* Onboarding Tutorial */}
-      <DashboardTutorial hasTags={tags.length > 0} />
+      <DashboardTutorial
+        hasTags={tags.length > 0}
+        userId={userId}
+        initialHasCompletedOnboarding={hasCompletedOnboarding}
+      />
 
       {/* Top Navbar */}
       <Navbar
@@ -57,6 +65,16 @@ function DashboardContent({
             <ThemeSwitch />
             <ProfileModal
               onSignOut={() => {
+                try {
+                  localStorage.removeItem('hasSeenTutorial')
+                  Object.keys(localStorage).forEach((key) => {
+                    if (key.startsWith('hasSeenTutorial')) {
+                      localStorage.removeItem(key)
+                    }
+                  })
+                } catch {
+                  // Ignore localStorage error
+                }
                 signOutAction()
               }}
             />
@@ -120,6 +138,8 @@ function DashboardContent({
 export function DashboardManager({
   initialTags,
   userEmail,
+  userId,
+  hasCompletedOnboarding,
   initialSelectedTagId,
   initialProfile,
 }: DashboardManagerProps) {
@@ -128,6 +148,8 @@ export function DashboardManager({
       <DashboardContent
         initialTags={initialTags}
         userEmail={userEmail}
+        userId={userId}
+        hasCompletedOnboarding={hasCompletedOnboarding}
         initialSelectedTagId={initialSelectedTagId}
       />
     </UserProvider>

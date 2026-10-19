@@ -86,6 +86,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   // Danger Zone Modals State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [unclaimModalOpen, setUnclaimModalOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [userTags, setUserTags] = useState<{ tag_id: string; active_mode: string }[]>([])
   const [selectedTagToUnclaim, setSelectedTagToUnclaim] = useState('')
@@ -131,6 +132,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   const close = useCallback(() => {
     setIsOpen(false)
     setIsAvatarGalleryOpen(false)
+    setShowLogoutConfirm(false)
     requestAnimationFrame(() => triggerRef.current?.focus())
   }, [])
 
@@ -140,7 +142,9 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     if (!isOpen) return
     const handler = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isAvatarGalleryOpen) {
+        if (showLogoutConfirm) {
+          setShowLogoutConfirm(false)
+        } else if (isAvatarGalleryOpen) {
           setIsAvatarGalleryOpen(false)
         } else {
           close()
@@ -149,7 +153,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [isOpen, isAvatarGalleryOpen, close])
+  }, [isOpen, showLogoutConfirm, isAvatarGalleryOpen, close])
 
   // ─── Focus first element on open ─────────────────────────────────────────────
 
@@ -483,7 +487,8 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
           {/* Sign out */}
           <button
             id="profile-modal-signout"
-            onClick={onSignOut}
+            type="button"
+            onClick={() => setShowLogoutConfirm(true)}
             aria-label="Sign out"
             className="
               p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-300 dark:hover:bg-red-950/50
@@ -764,6 +769,61 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     document.body
   ) : null
 
+  // ─── Portal: Logout Confirmation Modal ───────────────────────────────────────
+
+  const logoutConfirmModal = mounted && showLogoutConfirm ? createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150"
+      role="presentation"
+      onClick={(e) => { if (e.target === e.currentTarget) setShowLogoutConfirm(false) }}
+    >
+      <div
+        className="bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-xl shadow-xl max-w-xs w-full p-5 space-y-4 animate-in zoom-in-95 duration-150"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="logout-confirm-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h3
+            id="logout-confirm-title"
+            className="text-base font-semibold text-gray-900 dark:text-white"
+          >
+            Log Out
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-neutral-400 leading-normal">
+            You will be signed out of your Verto account.
+          </p>
+        </div>
+
+        <div className="flex gap-2.5 pt-1">
+          <button
+            type="button"
+            onClick={() => setShowLogoutConfirm(false)}
+            className="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-neutral-900 dark:hover:bg-neutral-800 dark:text-neutral-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowLogoutConfirm(false)
+              if (onSignOut) {
+                onSignOut()
+              } else {
+                router.push('/')
+              }
+            }}
+            className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium transition-colors shadow-sm cursor-pointer"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  ) : null
+
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -772,6 +832,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
       {profileModal}
       {unclaimModal}
       {deleteModal}
+      {logoutConfirmModal}
     </>
   )
 }

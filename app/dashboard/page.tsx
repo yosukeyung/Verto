@@ -47,10 +47,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     avatar_id: userProfile?.avatar_id || 'love',
   }
 
+  const hasCompletedOnboarding = Boolean(
+    user.user_metadata?.has_completed_onboarding || user.user_metadata?.hasSeenTutorial
+  )
+
   return (
     <DashboardManager
       initialTags={(tags as TagRow[]) || []}
       userEmail={user.email || ''}
+      userId={user.id}
+      hasCompletedOnboarding={hasCompletedOnboarding}
       initialSelectedTagId={resolvedSearchParams?.tag}
       initialProfile={initialProfile}
     />
