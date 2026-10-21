@@ -43,3 +43,6 @@ next-env.d.ts
 curl_output.html
 test-supabase.js
 test-supabase.mjs
+AGENTS.md
+CLAUDE.md
+*.txt
