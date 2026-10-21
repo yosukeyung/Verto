@@ -25,8 +25,7 @@ const FONT_OPTIONS: { id: ThemeFont; label: string; fontClass: string }[] = [
 
 const COLOR_OPTIONS: { id: ThemeColor; label: string; hex: string }[] = [
   { id: 'orange', label: 'Orange', hex: '#FF5C00' },
-  { id: 'black', label: 'Black', hex: '#000000' },
-  { id: 'emerald', label: 'Emerald', hex: '#10B981' },
+  { id: 'emerald', label: 'Green', hex: '#10B981' },
   { id: 'blue', label: 'Blue', hex: '#3B82F6' },
 ]
 
@@ -45,13 +44,15 @@ export function TagSettingsForm({
   const initialMetadata = useMemo(() => {
     const raw = (activeTag.metadata as Record<string, any>) || {}
     const pageTheme = (raw.page_theme || raw.pageTheme || 'light') as PageTheme
+    const themeColor: ThemeColor = raw.theme_color === 'black' ? 'orange' : (raw.theme_color || 'orange')
     const base: Record<string, any> = {
       theme_font: 'sans' as ThemeFont,
-      theme_color: 'orange' as ThemeColor,
+      theme_color: themeColor,
       page_theme: pageTheme,
       pageTheme: pageTheme,
       ...raw,
     }
+    base.theme_color = themeColor
     base.page_theme = pageTheme
     base.pageTheme = pageTheme
 
@@ -336,7 +337,8 @@ export function TagSettingsForm({
                 </span>
                 <div className="flex items-center justify-center gap-4" role="radiogroup" aria-label="Accent Color Selector">
                   {COLOR_OPTIONS.map((c) => {
-                    const isSelected = (metadata.theme_color || 'orange') === c.id
+                    const activeColor = metadata.theme_color === 'black' ? 'orange' : (metadata.theme_color || 'orange')
+                    const isSelected = activeColor === c.id
                     return (
                       <button
                         key={c.id}
@@ -349,7 +351,7 @@ export function TagSettingsForm({
                           isSelected
                             ? 'ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-105 shadow-sm'
                             : 'hover:scale-105 hover:opacity-90'
-                        } ${c.id === 'black' ? 'dark:outline dark:outline-1 dark:outline-neutral-700' : ''}`}
+                        }`}
                         style={{ backgroundColor: c.hex }}
                       >
                         {isSelected && (

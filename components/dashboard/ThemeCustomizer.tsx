@@ -17,14 +17,16 @@ const FONT_OPTIONS: { id: ThemeFont; label: string; preview: string; fontClass: 
 
 const COLOR_OPTIONS: { id: ThemeColor; label: string; hex: string }[] = [
   { id: 'orange', label: 'Orange', hex: '#FF5C00' },
-  { id: 'black', label: 'Black', hex: '#000000' },
-  { id: 'emerald', label: 'Emerald', hex: '#10B981' },
+  { id: 'emerald', label: 'Green', hex: '#10B981' },
   { id: 'blue', label: 'Blue', hex: '#3B82F6' },
 ]
 
 export function ThemeCustomizer({ metadata, onChangeMetadata }: ThemeCustomizerProps) {
   const currentFont: ThemeFont = (metadata.theme_font as ThemeFont) || 'sans'
-  const currentColor: ThemeColor = (metadata.theme_color as ThemeColor) || 'orange'
+  const currentColor: ThemeColor =
+    (metadata.theme_color as ThemeColor) === 'black'
+      ? 'orange'
+      : (metadata.theme_color as ThemeColor) || 'orange'
 
   const handleFontChange = (newFont: ThemeFont) => {
     onChangeMetadata({

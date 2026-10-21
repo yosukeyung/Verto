@@ -25,12 +25,12 @@ export function LostFoundView({ metadata, className, isPreview = false }: LostFo
   const { item_name = 'Lost Item', owner_name = 'Owner', wa_number = '', custom_message = '' } = metadata
 
   const themeFontKey: ThemeFont = (metadata.theme_font as ThemeFont) || 'sans'
-  const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) || 'orange'
+  const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) === 'black' ? 'orange' : (metadata.theme_color as ThemeColor) || 'orange'
   const isDark = (metadata.page_theme || metadata.pageTheme) === 'dark'
 
   const fontClass = FONT_MAP[themeFontKey] || FONT_MAP.sans
   const colorConfig = COLOR_MAP[themeColorKey] || COLOR_MAP.orange
-  const effectiveColor = themeColorKey === 'black' ? (isDark ? '#FFFFFF' : '#000000') : colorConfig.hex
+  const effectiveColor = colorConfig.hex
 
   const cleanWa = wa_number.replace(/[^0-9]/g, '')
   const template = `Hello, I found your item (${item_name}). I found this contact information on your Verto tag.`

@@ -108,12 +108,12 @@ export function SocialView({ metadata, className, isPreview = false }: SocialVie
 
   // Parse theme settings with fallbacks
   const themeFontKey: ThemeFont = (metadata.theme_font as ThemeFont) || 'sans'
-  const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) || 'orange'
+  const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) === 'black' ? 'orange' : (metadata.theme_color as ThemeColor) || 'orange'
   const isDark = (metadata.page_theme || metadata.pageTheme) === 'dark'
 
   const fontClass = FONT_MAP[themeFontKey] || FONT_MAP.sans
   const colorConfig = COLOR_MAP[themeColorKey] || COLOR_MAP.orange
-  const effectiveColor = themeColorKey === 'black' ? (isDark ? '#FFFFFF' : '#000000') : colorConfig.hex
+  const effectiveColor = colorConfig.hex
 
   // In live preview mode, provide realistic sample links if user has not entered any yet
   const showFallbackLinks = isPreview && !wa && !ig && !linkedin

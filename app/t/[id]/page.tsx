@@ -35,7 +35,7 @@ export default async function TagPage({ params }: TagPageProps) {
 
   const rawMetadata = (tag.metadata as Record<string, any>) || {}
   const theme_font: ThemeFont = rawMetadata.theme_font || 'sans'
-  const theme_color: ThemeColor = rawMetadata.theme_color || 'orange'
+  const theme_color: ThemeColor = rawMetadata.theme_color === 'black' ? 'orange' : (rawMetadata.theme_color || 'orange')
   const page_theme: PageTheme = (rawMetadata.page_theme || rawMetadata.pageTheme) === 'dark' ? 'dark' : 'light'
 
   const metadata = {

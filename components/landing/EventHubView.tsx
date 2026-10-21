@@ -34,12 +34,12 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
   const { title = 'Event Information', description = '', link_1, link_2, link_3 } = metadata
 
   const themeFontKey: ThemeFont = (metadata.theme_font as ThemeFont) || 'sans'
-  const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) || 'orange'
+  const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) === 'black' ? 'orange' : (metadata.theme_color as ThemeColor) || 'orange'
   const isDark = (metadata.page_theme || metadata.pageTheme) === 'dark'
 
   const fontClass = FONT_MAP[themeFontKey] || FONT_MAP.sans
   const colorConfig = COLOR_MAP[themeColorKey] || COLOR_MAP.orange
-  const effectiveColor = themeColorKey === 'black' ? (isDark ? '#FFFFFF' : '#000000') : colorConfig.hex
+  const effectiveColor = colorConfig.hex
 
   const rawLinks = [link_1, link_2, link_3].filter(Boolean) as string[]
   const links = isPreview && rawLinks.length === 0
