@@ -38,24 +38,20 @@ export function LostFoundView({ metadata, className, isPreview = false }: LostFo
 
   return (
     <main
-      className={`flex flex-col justify-between transition-colors duration-150 ${
-        isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
-      } ${
-        className || 'min-h-screen px-4 py-12'
-      } ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
+      className={`flex flex-col justify-between transition-colors duration-150 ${isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
+        } ${className || 'min-h-screen px-4 py-12'
+        } ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
       style={{ '--theme-accent': colorConfig.hex } as React.CSSProperties}
     >
       <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center text-center">
         {/* Badge & Notice */}
         <div className="mb-6">
-          <div className={`w-12 h-12 rounded-full border flex items-center justify-center mx-auto mb-4 ${
-            isDark ? 'bg-amber-950/40 border-amber-800 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-600'
-          }`}>
+          <div className={`w-12 h-12 rounded-full border flex items-center justify-center mx-auto mb-4 ${isDark ? 'bg-amber-950/40 border-amber-800 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-600'
+            }`}>
             <ShieldAlert className="w-6 h-6" strokeWidth={1.75} />
           </div>
-          <span className={`text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md border inline-block mb-3 ${
-            isDark ? 'bg-amber-950/40 border-amber-800 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'
-          }`}>
+          <span className={`text-xs font-semibold uppercase tracking-wider px-2.5 py-1 rounded-md border inline-block mb-3 ${isDark ? 'bg-amber-950/40 border-amber-800 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'
+            }`}>
             Item Found
           </span>
           <h1 className={`text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
@@ -69,8 +65,8 @@ export function LostFoundView({ metadata, className, isPreview = false }: LostFo
             Owner: <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{owner_name || (isPreview ? 'Owner Name' : 'Owner')}</span>
           </p>
           <p className={`text-xs max-w-xs mx-auto mt-3 whitespace-pre-wrap ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
-            {custom_message && custom_message.trim().length > 0 
-              ? custom_message 
+            {custom_message && custom_message.trim().length > 0
+              ? custom_message
               : 'Thank you for scanning this tag. You can reach out directly to the owner using the button below.'}
           </p>
         </div>
@@ -85,7 +81,7 @@ export function LostFoundView({ metadata, className, isPreview = false }: LostFo
             style={{ backgroundColor: effectiveColor }}
           >
             <MessageCircle className="w-5 h-5 shrink-0" strokeWidth={1.75} />
-            <span>Contact Owner via WhatsApp</span>
+            <span>Contact Owner</span>
           </a>
         </div>
       </div>
