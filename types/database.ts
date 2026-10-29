@@ -51,6 +51,12 @@ export interface EventHubMetadata {
   link_1?: string | null
   link_2?: string | null
   link_3?: string | null
+  link_1_title?: string | null
+  link_2_title?: string | null
+  link_3_title?: string | null
+  link1_title?: string | null
+  link2_title?: string | null
+  link3_title?: string | null
   theme_font?: ThemeFont
   theme_color?: ThemeColor
   page_theme?: PageTheme

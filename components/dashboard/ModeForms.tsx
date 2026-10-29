@@ -1,10 +1,11 @@
 import React from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Input } from '@/components/ui/Input'
-import type { 
-  ActiveMode, 
-  SocialMetadata, 
-  LostAndFoundMetadata, 
-  EventHubMetadata 
+import type {
+  ActiveMode,
+  SocialMetadata,
+  LostAndFoundMetadata,
+  EventHubMetadata
 } from '@/types/database'
 
 interface SocialFormProps {
@@ -135,31 +136,108 @@ export function EventHubForm({ data, onChange }: EventHubFormProps) {
         onChange={(e) => onChange({ ...data, description: e.target.value })}
         placeholder="Time, location, and brief summary of the event"
       />
-      <Input
-        id="event-link-1"
-        label="Link 1"
-        type="url"
-        value={data.link_1 || ''}
-        onChange={(e) => onChange({ ...data, link_1: e.target.value })}
-        placeholder="https://..."
-        helperText="Button label is automatically derived from the link hostname"
-      />
-      <Input
-        id="event-link-2"
-        label="Link 2"
-        type="url"
-        value={data.link_2 || ''}
-        onChange={(e) => onChange({ ...data, link_2: e.target.value })}
-        placeholder="https://..."
-      />
-      <Input
-        id="event-link-3"
-        label="Link 3"
-        type="url"
-        value={data.link_3 || ''}
-        onChange={(e) => onChange({ ...data, link_3: e.target.value })}
-        placeholder="https://..."
-      />
+
+      {/* Link 1 */}
+      <div className="space-y-2">
+        <Input
+          id="event-link-1"
+          label="Link 1"
+          type="url"
+          value={data.link_1 || ''}
+          onChange={(e) => onChange({ ...data, link_1: e.target.value })}
+          placeholder="https://..."
+        />
+        <AnimatePresence>
+          {Boolean(data.link_1?.trim()) && (
+            <motion.div
+              key="event-link-1-title-wrapper"
+              initial={{ opacity: 0, height: 0, y: -8 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="pl-3 border-l-2 border-orange-500/40 dark:border-orange-500/30 pt-1 pb-0.5">
+                <Input
+                  id="event-link-1-title"
+                  label="Button Title (Optional)"
+                  value={data.link_1_title || data.link1_title || ''}
+                  onChange={(e) => onChange({ ...data, link_1_title: e.target.value })}
+                  placeholder="e.g., Presentation Slides / Watch Video"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Link 2 */}
+      <div className="space-y-2">
+        <Input
+          id="event-link-2"
+          label="Link 2"
+          type="url"
+          value={data.link_2 || ''}
+          onChange={(e) => onChange({ ...data, link_2: e.target.value })}
+          placeholder="https://..."
+        />
+        <AnimatePresence>
+          {Boolean(data.link_2?.trim()) && (
+            <motion.div
+              key="event-link-2-title-wrapper"
+              initial={{ opacity: 0, height: 0, y: -8 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="pl-3 border-l-2 border-orange-500/40 dark:border-orange-500/30 pt-1 pb-0.5">
+                <Input
+                  id="event-link-2-title"
+                  label="Button Title (Optional)"
+                  value={data.link_2_title || data.link2_title || ''}
+                  onChange={(e) => onChange({ ...data, link_2_title: e.target.value })}
+                  placeholder="e.g., Presentation Slides / Watch Video"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Link 3 */}
+      <div className="space-y-2">
+        <Input
+          id="event-link-3"
+          label="Link 3"
+          type="url"
+          value={data.link_3 || ''}
+          onChange={(e) => onChange({ ...data, link_3: e.target.value })}
+          placeholder="https://..."
+        />
+        <AnimatePresence>
+          {Boolean(data.link_3?.trim()) && (
+            <motion.div
+              key="event-link-3-title-wrapper"
+              initial={{ opacity: 0, height: 0, y: -8 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -8 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="pl-3 border-l-2 border-orange-500/40 dark:border-orange-500/30 pt-1 pb-0.5">
+                <Input
+                  id="event-link-3-title"
+                  label="Button Title (Optional)"
+                  value={data.link_3_title || data.link3_title || ''}
+                  onChange={(e) => onChange({ ...data, link_3_title: e.target.value })}
+                  placeholder="e.g., Presentation Slides / Watch Video"
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   )
 }

@@ -41,9 +41,24 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
   const colorConfig = COLOR_MAP[themeColorKey] || COLOR_MAP.orange
   const effectiveColor = colorConfig.hex
 
-  const rawLinks = [link_1, link_2, link_3].filter(Boolean) as string[]
-  const links = isPreview && rawLinks.length === 0
-    ? ['https://event.com/rsvp', 'https://event.com/schedule']
+  type LinkItem = { url: string; title?: string | null }
+
+  const rawLinks: LinkItem[] = []
+  if (link_1 && link_1.trim().length > 0) {
+    rawLinks.push({ url: link_1.trim(), title: metadata.link_1_title || metadata.link1_title })
+  }
+  if (link_2 && link_2.trim().length > 0) {
+    rawLinks.push({ url: link_2.trim(), title: metadata.link_2_title || metadata.link2_title })
+  }
+  if (link_3 && link_3.trim().length > 0) {
+    rawLinks.push({ url: link_3.trim(), title: metadata.link_3_title || metadata.link3_title })
+  }
+
+  const links: LinkItem[] = isPreview && rawLinks.length === 0
+    ? [
+        { url: 'https://event.com/rsvp' },
+        { url: 'https://event.com/schedule' },
+      ]
     : rawLinks
 
   return (
@@ -85,9 +100,10 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
         {/* Links Stack */}
         {links.length > 0 && (
           <div className="space-y-3 w-full">
-            {links.map((link, idx) => {
-              const fullUrl = link.startsWith('http') ? link : `https://${link}`
-              const label = formatUrlLabel(link)
+            {links.map((item, idx) => {
+              const fullUrl = item.url.startsWith('http') ? item.url : `https://${item.url}`
+              const customTitle = item.title?.trim()
+              const label = customTitle && customTitle.length > 0 ? customTitle : formatUrlLabel(item.url)
 
               return (
                 <a
