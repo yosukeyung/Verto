@@ -14,6 +14,7 @@ import { saveTagSettings } from '@/app/dashboard/actions'
 interface TagSettingsFormProps {
   activeTag: TagRow
   profileFullName: string
+  profileAvatarId?: string
   onSaveSuccess: (updatedTag: TagRow) => void
 }
 
@@ -37,6 +38,7 @@ const PAGE_THEME_OPTIONS: { id: PageTheme; label: string; icon: typeof Sun }[] =
 export function TagSettingsForm({
   activeTag,
   profileFullName,
+  profileAvatarId = 'love',
   onSaveSuccess,
 }: TagSettingsFormProps) {
   // Normalize initial data
@@ -221,30 +223,32 @@ export function TagSettingsForm({
                 />
 
                 {/* Scaled-down Micro Landing View */}
-                <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
+                <div className="absolute inset-0 select-none overflow-hidden">
                   <div
-                    className="w-[280px] h-[616px] origin-top-left"
+                    className="w-[280px] h-[616px] origin-top-left overflow-y-auto scrollbar-hide"
                     style={{ transform: 'scale(0.5)' }}
                   >
                     {activeMode === 'social' && (
                       <SocialView
                         metadata={metadata}
+                        avatarId={profileAvatarId}
                         isPreview
-                        className="h-full pt-8 pb-6 px-3.5 flex flex-col justify-between"
+                        className="min-h-full"
                       />
                     )}
                     {activeMode === 'lost_and_found' && (
                       <LostFoundView
                         metadata={metadata}
+                        avatarId={profileAvatarId}
                         isPreview
-                        className="h-full pt-8 pb-6 px-3.5 flex flex-col justify-between"
+                        className="min-h-full"
                       />
                     )}
                     {activeMode === 'event_hub' && (
                       <EventHubView
                         metadata={metadata}
                         isPreview
-                        className="h-full pt-8 pb-6 px-3.5 flex flex-col justify-between"
+                        className="min-h-full"
                       />
                     )}
                   </div>

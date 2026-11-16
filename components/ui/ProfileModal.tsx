@@ -16,25 +16,20 @@ import {
   Trash2,
   Check,
   Pencil,
+  Upload,
 } from 'lucide-react'
 import { useUser } from '@/components/providers/UserContext'
+import {
+  AVATARS,
+  getAvatarSrc,
+  isCustomAvatarUrl,
+  type AvatarOption,
+} from '@/lib/avatars'
+import { createClient } from '@/lib/supabase/client'
+import { AvatarCropper } from '@/components/ui/AvatarCropper'
+import { AvatarLightbox } from '@/components/ui/AvatarLightbox'
 
-// ─── Avatar Definitions ────────────────────────────────────────────────────────
-
-export interface AvatarOption {
-  id: string
-  name: string
-  src: string
-}
-
-export const AVATARS: AvatarOption[] = [
-  { id: 'love', name: 'Love', src: '/avatars/love.png' },
-  { id: 'eat', name: 'Eat', src: '/avatars/eat.png' },
-  { id: 'sleep', name: 'Sleep', src: '/avatars/sleep.png' },
-  { id: 'angry', name: 'Angry', src: '/avatars/angry.png' },
-  { id: 'cry', name: 'Cry', src: '/avatars/cry.png' },
-  { id: 'study', name: 'Study', src: '/avatars/study.png' },
-]
+export { AVATARS, type AvatarOption }
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -79,9 +74,16 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     draftProfile.full_name.trim() !== profile.full_name.trim() ||
     draftProfile.avatar_id !== profile.avatar_id
 
-  // Nested Avatar Selection Pop-up State
+  // Nested Avatar Selection Pop-up & Cropper State
   const [isAvatarGalleryOpen, setIsAvatarGalleryOpen] = useState(false)
   const [previewAvatar, setPreviewAvatar] = useState(profile.avatar_id || 'love')
+  const [cropperImageSrc, setCropperImageSrc] = useState<string | null>(null)
+  const [stagedAvatarBlob, setStagedAvatarBlob] = useState<Blob | null>(null)
+  const [stagedPreviewUrl, setStagedPreviewUrl] = useState<string | null>(null)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Danger Zone Modals State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
@@ -96,12 +98,21 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const firstFocusRef = useRef<HTMLButtonElement>(null)
 
-  // Confirmed avatar strictly isolated for Navbar trigger
-  const confirmedAvatar = AVATARS.find((a) => a.id === profile.avatar_id) ?? AVATARS[0]
-  // Draft avatar for local profile editor
-  const draftAvatar = AVATARS.find((a) => a.id === draftProfile.avatar_id) ?? confirmedAvatar
-  // Preview avatar for gallery modal
-  const previewAvatarOption = AVATARS.find((a) => a.id === previewAvatar) ?? draftAvatar
+  // Resolved avatar URLs across Navbar, Draft Profile, and Gallery
+  const confirmedAvatarSrc = getAvatarSrc(profile)
+  const isConfirmedCustom = isCustomAvatarUrl(confirmedAvatarSrc)
+  const draftAvatarSrc = getAvatarSrc(draftProfile.avatar_id)
+  const isDraftCustom = isCustomAvatarUrl(draftAvatarSrc)
+  const previewAvatarSrc = getAvatarSrc(previewAvatar)
+  const isPreviewCustom = isCustomAvatarUrl(previewAvatarSrc)
+
+  // Revoke object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (stagedPreviewUrl) URL.revokeObjectURL(stagedPreviewUrl)
+      if (cropperImageSrc) URL.revokeObjectURL(cropperImageSrc)
+    }
+  }, [stagedPreviewUrl, cropperImageSrc])
 
   // ─── Body scroll-lock ─────────────────────────────────────────────────────────
 
@@ -125,6 +136,8 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
       avatar_id: profile.avatar_id,
     })
     setSaved(false)
+    setSaveError(null)
+    setAvatarError(null)
     setIsAvatarGalleryOpen(false)
     setIsOpen(true)
   }
@@ -133,8 +146,20 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     setIsOpen(false)
     setIsAvatarGalleryOpen(false)
     setShowLogoutConfirm(false)
+    setIsLightboxOpen(false)
+    setAvatarError(null)
+    setSaveError(null)
+    if (cropperImageSrc) {
+      URL.revokeObjectURL(cropperImageSrc)
+      setCropperImageSrc(null)
+    }
+    if (stagedPreviewUrl) {
+      URL.revokeObjectURL(stagedPreviewUrl)
+      setStagedPreviewUrl(null)
+    }
+    setStagedAvatarBlob(null)
     requestAnimationFrame(() => triggerRef.current?.focus())
-  }, [])
+  }, [cropperImageSrc, stagedPreviewUrl])
 
   // ─── Keyboard: Escape to close ────────────────────────────────────────────────
 
@@ -163,20 +188,78 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     }
   }, [isOpen, isAvatarGalleryOpen])
 
-  // ─── Avatar Gallery Handlers ──────────────────────────────────────────────────
+  // ─── Avatar Gallery & Cropper Handlers ────────────────────────────────────────
 
   const openAvatarGallery = () => {
     setPreviewAvatar(draftProfile.avatar_id)
+    setAvatarError(null)
+    if (cropperImageSrc) {
+      URL.revokeObjectURL(cropperImageSrc)
+      setCropperImageSrc(null)
+    }
     setIsAvatarGalleryOpen(true)
   }
 
   const handleCancelAvatar = () => {
+    if (cropperImageSrc) {
+      URL.revokeObjectURL(cropperImageSrc)
+      setCropperImageSrc(null)
+      return
+    }
+    setAvatarError(null)
     setIsAvatarGalleryOpen(false)
   }
 
   const handleSaveAvatar = () => {
-    // Strictly update the local draftProfile; do NOT update global UserContext
+    // Switching to static Red Panda clears any staged custom upload blob
+    if (stagedPreviewUrl && previewAvatar !== stagedPreviewUrl) {
+      URL.revokeObjectURL(stagedPreviewUrl)
+      setStagedPreviewUrl(null)
+      setStagedAvatarBlob(null)
+    }
+    // Strictly update local draftProfile; do NOT update global UserContext until Save Changes
     setDraftProfile((prev) => ({ ...prev, avatar_id: previewAvatar }))
+    setAvatarError(null)
+    setIsAvatarGalleryOpen(false)
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAvatarError(null)
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setAvatarError('Unsupported format. Please select a JPEG, PNG, or WebP image.')
+      return
+    }
+
+    const maxBytes = 5 * 1024 * 1024
+    if (file.size > maxBytes) {
+      setAvatarError('File exceeds the 5 MB limit. Please choose a smaller image.')
+      return
+    }
+
+    if (cropperImageSrc) {
+      URL.revokeObjectURL(cropperImageSrc)
+    }
+    setCropperImageSrc(URL.createObjectURL(file))
+  }
+
+  const handleCropComplete = (blob: Blob) => {
+    if (stagedPreviewUrl) {
+      URL.revokeObjectURL(stagedPreviewUrl)
+    }
+    if (cropperImageSrc) {
+      URL.revokeObjectURL(cropperImageSrc)
+      setCropperImageSrc(null)
+    }
+    const nextPreviewUrl = URL.createObjectURL(blob)
+    setStagedAvatarBlob(blob)
+    setStagedPreviewUrl(nextPreviewUrl)
+    setDraftProfile((prev) => ({ ...prev, avatar_id: nextPreviewUrl }))
+    setAvatarError(null)
     setIsAvatarGalleryOpen(false)
   }
 
@@ -185,36 +268,81 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   async function handleSave() {
     if (!hasChanges || isSaving || !draftProfile.full_name.trim()) return
     setIsSaving(true)
+    setSaveError(null)
     try {
       const trimmedName = draftProfile.full_name.trim()
-      const newAvatarId = draftProfile.avatar_id
+      let finalAvatarId = draftProfile.avatar_id
 
-      // 1. Run the Supabase update mutation
+      // 1. If a custom cropped WebP blob is staged, upload to deterministic path (zero orphans)
+      if (stagedAvatarBlob) {
+        const supabase = createClient()
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser()
+
+        if (authError || !user) {
+          setSaveError('Session expired. Please sign in again.')
+          setIsSaving(false)
+          return
+        }
+
+        const filePath = `${user.id}/avatar.webp`
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, stagedAvatarBlob, {
+            upsert: true,
+            contentType: 'image/webp',
+          })
+
+        if (uploadError) {
+          setSaveError(`Photo upload failed: ${uploadError.message}`)
+          setIsSaving(false)
+          return
+        }
+
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+        finalAvatarId = `${urlData.publicUrl}?t=${Date.now()}`
+      }
+
+      // 2. Run the Supabase database profile update mutation
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: trimmedName, avatar_id: newAvatarId }),
+        body: JSON.stringify({ full_name: trimmedName, avatar_id: finalAvatarId }),
       })
 
       if (res.ok) {
-        // 2. Upon success, immediately update global User Context with finalized draftProfile
-        updateProfile({
+        if (stagedPreviewUrl) {
+          URL.revokeObjectURL(stagedPreviewUrl)
+          setStagedPreviewUrl(null)
+        }
+        setStagedAvatarBlob(null)
+
+        setDraftProfile({
           full_name: trimmedName,
-          avatar_id: newAvatarId,
+          avatar_id: finalAvatarId,
         })
 
-        // 3. Purge Next.js client-side router cache aggressively to prevent stale cache flicker
+        // 3. Immediately update global User Context (syncs Navbar, Dashboard preview, etc.)
+        updateProfile({
+          full_name: trimmedName,
+          avatar_id: finalAvatarId,
+        })
+
+        // 4. Purge Next.js client-side router cache
         router.refresh()
 
-        // 4. Reset the dirty state
+        // 5. Reset dirty feedback
         setSaved(true)
         setTimeout(() => setSaved(false), 2000)
       } else {
-        alert('Failed to save profile changes.')
+        const errBody = await res.json().catch(() => ({}))
+        setSaveError(errBody?.error || 'Failed to save profile changes.')
       }
     } catch (err) {
       console.error(err)
-      alert('Error saving profile changes.')
+      setSaveError('Error saving profile changes.')
     } finally {
       setIsSaving(false)
     }
@@ -331,9 +459,11 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
       "
     >
       <img
-        src={confirmedAvatar.src}
-        alt={confirmedAvatar.name}
-        className="w-full h-full rounded-full object-cover scale-115 transition-transform duration-200"
+        src={confirmedAvatarSrc}
+        alt={profile.full_name ? `${profile.full_name}'s avatar` : 'Profile avatar'}
+        className={`w-full h-full rounded-full transition-transform duration-200 ${
+          isConfirmedCustom ? 'object-cover' : 'object-cover scale-115'
+        }`}
       />
     </button>
   )
@@ -366,7 +496,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
           animate-in fade-in zoom-in-95 duration-200
         "
       >
-        {/* ─── Nested Avatar Selection View ─────────────────────────────────── */}
+        {/* ─── Nested Avatar Selection & Cropper View ────────────────────────── */}
         {isAvatarGalleryOpen ? (
           <div className="absolute inset-0 z-20 bg-white dark:bg-neutral-950 flex flex-col animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
@@ -374,7 +504,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
               <button
                 type="button"
                 onClick={handleCancelAvatar}
-                aria-label="Cancel avatar selection"
+                aria-label={cropperImageSrc ? 'Back to avatar options' : 'Cancel avatar selection'}
                 className="
                   p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-900
                   transition-colors duration-150
@@ -385,77 +515,127 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
               </button>
 
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
-                Choose Avatar
+                {cropperImageSrc ? 'Crop Photo' : 'Choose Avatar'}
               </h3>
 
-              <button
-                type="button"
-                onClick={handleSaveAvatar}
-                className="
-                  px-3 py-1 text-sm font-semibold text-[#FF5C00] hover:text-[#e04e00]
-                  hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg transition-colors duration-150
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]
-                "
-              >
-                Done
-              </button>
+              {cropperImageSrc ? (
+                <div className="w-12" />
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSaveAvatar}
+                  className="
+                    px-3 py-1 text-sm font-semibold text-[#FF5C00] hover:text-[#e04e00]
+                    hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg transition-colors duration-150
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]
+                  "
+                >
+                  Done
+                </button>
+              )}
             </div>
 
             {/* Divider */}
             <div className="h-px bg-gray-100 dark:bg-neutral-800 mx-5" />
 
-            {/* Body */}
-            <div className="flex-1 flex flex-col items-center justify-center px-5 py-6 space-y-8">
-              {/* Large Preview */}
-              <div className="relative">
-                <img
-                  src={previewAvatarOption.src}
-                  alt={previewAvatarOption.name}
-                  className="w-28 h-28 rounded-full object-contain bg-gray-50 dark:bg-neutral-900 shadow-sm border border-gray-100 dark:border-neutral-800 ring-4 ring-orange-500/20 transition-all duration-200"
-                />
-              </div>
+            {cropperImageSrc ? (
+              <AvatarCropper
+                imageSrc={cropperImageSrc}
+                onCancel={() => {
+                  URL.revokeObjectURL(cropperImageSrc)
+                  setCropperImageSrc(null)
+                }}
+                onComplete={handleCropComplete}
+              />
+            ) : (
+              /* Body */
+              <div className="flex-1 flex flex-col items-center justify-center px-5 py-6 space-y-6 overflow-y-auto">
+                {/* Large Preview */}
+                <div className="relative">
+                  <img
+                    src={previewAvatarSrc}
+                    alt={isPreviewCustom ? 'Custom avatar preview' : 'Selected Red Panda avatar'}
+                    className={`w-28 h-28 rounded-full bg-gray-50 dark:bg-neutral-900 shadow-sm border border-gray-100 dark:border-neutral-800 ring-4 ring-orange-500/20 transition-all duration-200 ${
+                      isPreviewCustom ? 'object-cover' : 'object-contain'
+                    }`}
+                  />
+                </div>
 
-              {/* Horizontal scrollable row */}
-              <div
-                role="radiogroup"
-                aria-label="Choose avatar"
-                className="flex items-center gap-3 overflow-x-auto py-2 px-2 w-full justify-start sm:justify-center scrollbar-none"
-              >
-                {AVATARS.map((av) => {
-                  const isSelected = av.id === previewAvatar
-                  return (
-                    <button
-                      key={av.id}
-                      type="button"
-                      id={`nested-avatar-option-${av.id}`}
-                      role="radio"
-                      aria-checked={isSelected}
-                      aria-label={`Avatar: ${av.name}`}
-                      onClick={() => setPreviewAvatar(av.id)}
-                      className={`
-                        relative flex-shrink-0 rounded-full transition-all duration-150
-                        hover:scale-105 active:scale-95 focus:outline-none
-                        ${isSelected
-                          ? 'ring-2 ring-orange-500 ring-offset-2 dark:ring-offset-neutral-950'
-                          : 'hover:ring-2 hover:ring-gray-300 dark:hover:ring-neutral-700'
-                        }
-                      `}
+                {/* Upload Custom Photo Slot */}
+                <div className="w-full max-w-xs space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-11 px-4 rounded-xl border border-dashed border-gray-300 dark:border-neutral-700 bg-gray-50/70 dark:bg-neutral-900/60 hover:border-[#FF5C00] hover:bg-orange-50/40 dark:hover:border-[#FF5C00] dark:hover:bg-orange-500/10 text-xs font-semibold text-gray-700 dark:text-neutral-200 inline-flex items-center justify-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]"
+                  >
+                    <Upload className="w-4 h-4 text-[#FF5C00]" strokeWidth={2} />
+                    <span>Upload Custom Photo</span>
+                  </button>
+                  <p className="text-[11px] text-center text-gray-500 dark:text-neutral-400">
+                    JPEG, PNG, or WebP up to 5 MB
+                  </p>
+                  {avatarError && (
+                    <p
+                      role="alert"
+                      className="text-xs text-center text-red-600 dark:text-red-400 font-medium pt-0.5"
                     >
-                      <img
-                        src={av.src}
-                        alt={av.name}
-                        className="w-14 h-14 rounded-full object-contain bg-gray-50 dark:bg-neutral-900"
-                      />
-                      {isSelected && (
-                        <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center shadow-sm">
-                          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
+                      {avatarError}
+                    </p>
+                  )}
+                </div>
+
+                {/* 6 Default Red Panda Avatars */}
+                <div
+                  role="radiogroup"
+                  aria-label="Choose avatar"
+                  className="flex items-center gap-3 overflow-x-auto py-2 px-2 w-full justify-start sm:justify-center scrollbar-none"
+                >
+                  {AVATARS.map((av) => {
+                    const isSelected = av.id === previewAvatar
+                    return (
+                      <button
+                        key={av.id}
+                        type="button"
+                        id={`nested-avatar-option-${av.id}`}
+                        role="radio"
+                        aria-checked={isSelected}
+                        aria-label={`Avatar: ${av.name}`}
+                        onClick={() => {
+                          setAvatarError(null)
+                          setPreviewAvatar(av.id)
+                        }}
+                        className={`
+                          relative flex-shrink-0 rounded-full transition-all duration-150
+                          hover:scale-105 active:scale-95 focus:outline-none cursor-pointer
+                          ${isSelected
+                            ? 'ring-2 ring-orange-500 ring-offset-2 dark:ring-offset-neutral-950'
+                            : 'hover:ring-2 hover:ring-gray-300 dark:hover:ring-neutral-700'
+                          }
+                        `}
+                      >
+                        <img
+                          src={av.src}
+                          alt={av.name}
+                          className="w-14 h-14 rounded-full object-contain bg-gray-50 dark:bg-neutral-900"
+                        />
+                        {isSelected && (
+                          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center shadow-sm">
+                            <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         ) : null}
 
@@ -505,26 +685,33 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
 
         {/* Scrollable body */}
         <div className="px-5 py-5 space-y-6 overflow-y-auto flex-1">
-          {/* Avatar section */}
+          {/* Avatar section: click image to enlarge in Lightbox, click pencil to change */}
           <div className="flex flex-col items-center">
-            <button
-              type="button"
-              onClick={openAvatarGallery}
-              aria-label="Change profile avatar"
-              className="group relative rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00] focus-visible:ring-offset-2 transition-transform active:scale-95"
-            >
-              <img
-                src={draftAvatar.src}
-                alt={draftAvatar.name}
-                className="w-24 h-24 rounded-full object-contain bg-gray-50 dark:bg-neutral-900 shadow-sm border border-gray-100 dark:border-neutral-800 ring-2 ring-orange-500/20 group-hover:ring-orange-500 transition-all duration-200"
-              />
-              <span
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-300 shadow-sm flex items-center justify-center text-gray-600 group-hover:text-[#FF5C00] group-hover:border-orange-200 dark:group-hover:border-orange-500/50 transition-colors"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsLightboxOpen(true)}
+                aria-label="Enlarge profile picture"
+                className="group rounded-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00] focus-visible:ring-offset-2 transition-transform active:scale-95"
+              >
+                <img
+                  src={draftAvatarSrc}
+                  alt={draftProfile.full_name ? `${draftProfile.full_name}'s avatar` : 'Profile avatar'}
+                  className={`w-24 h-24 rounded-full bg-gray-50 dark:bg-neutral-900 shadow-sm border border-gray-100 dark:border-neutral-800 ring-2 ring-orange-500/20 group-hover:ring-orange-500 transition-all duration-200 ${
+                    isDraftCustom ? 'object-cover' : 'object-contain'
+                  }`}
+                />
+              </button>
+              <button
+                type="button"
+                onClick={openAvatarGallery}
+                aria-label="Change profile avatar"
                 title="Edit avatar"
+                className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-white border border-gray-200 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-300 shadow-sm flex items-center justify-center text-gray-600 hover:text-[#FF5C00] hover:border-orange-200 dark:hover:border-orange-500/50 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]"
               >
                 <Pencil className="w-4 h-4" strokeWidth={2} />
-              </span>
-            </button>
+              </button>
+            </div>
           </div>
 
           {/* Form fields */}
@@ -582,6 +769,15 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
                 Email cannot be changed.
               </p>
             </div>
+
+            {saveError && (
+              <p
+                role="alert"
+                className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 rounded-lg px-3 py-2"
+              >
+                {saveError}
+              </p>
+            )}
 
             {/* Save button */}
             <button
@@ -830,6 +1026,13 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     <>
       {trigger}
       {profileModal}
+      <AvatarLightbox
+        isOpen={isLightboxOpen}
+        src={draftAvatarSrc}
+        alt={draftProfile.full_name ? `${draftProfile.full_name}'s avatar` : 'Profile avatar'}
+        isCustom={isDraftCustom}
+        onClose={() => setIsLightboxOpen(false)}
+      />
       {unclaimModal}
       {deleteModal}
       {logoutConfirmModal}

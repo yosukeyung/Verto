@@ -25,8 +25,9 @@ export async function DELETE() {
     )
   }
 
-  // 2. Delete via service-role client (Auth Admin API)
+  // 2. Clean up custom avatar file (best-effort) and delete user via service-role client
   const serviceClient = await createServiceClient()
+  await serviceClient.storage.from('avatars').remove([`${user.id}/avatar.webp`])
   const { error: deleteError } = await serviceClient.auth.admin.deleteUser(user.id)
 
   if (deleteError) {

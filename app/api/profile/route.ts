@@ -74,6 +74,11 @@ export async function POST(request: Request) {
       )
     }
 
+    // Zero-orphan storage cleanup when switching back to a static Red Panda avatar
+    if (!/^https?:\/\//i.test(String(avatar_id))) {
+      await serviceClient.storage.from('avatars').remove([`${user.id}/avatar.webp`])
+    }
+
     return NextResponse.json({ success: true })
   } catch (err) {
     return NextResponse.json(

@@ -126,6 +126,7 @@ function DashboardContent({
               key={selectedTagId}
               activeTag={activeTag}
               profileFullName={profile.full_name}
+              profileAvatarId={profile.avatar_id}
               onSaveSuccess={handleSaveSuccess}
             />
           </>

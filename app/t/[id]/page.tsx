@@ -33,6 +33,16 @@ export default async function TagPage({ params }: TagPageProps) {
     return <NotFoundView />
   }
 
+  let ownerAvatarId: string | null = null
+  if (tag.owner_id) {
+    const { data: ownerProfile } = await (supabase.from('users') as any)
+      .select('avatar_id')
+      .eq('id', tag.owner_id)
+      .maybeSingle()
+
+    ownerAvatarId = ownerProfile?.avatar_id ?? null
+  }
+
   const rawMetadata = (tag.metadata as Record<string, any>) || {}
   const theme_font: ThemeFont = rawMetadata.theme_font || 'sans'
   const theme_color: ThemeColor = rawMetadata.theme_color === 'black' ? 'orange' : (rawMetadata.theme_color || 'orange')
@@ -51,9 +61,9 @@ export default async function TagPage({ params }: TagPageProps) {
   const renderContent = () => {
     switch (tag.active_mode) {
       case 'social':
-        return <SocialView metadata={metadata} />
+        return <SocialView metadata={metadata} avatarId={ownerAvatarId} />
       case 'lost_and_found':
-        return <LostFoundView metadata={metadata} />
+        return <LostFoundView metadata={metadata} avatarId={ownerAvatarId} />
       case 'event_hub':
         return <EventHubView metadata={metadata} />
       default:

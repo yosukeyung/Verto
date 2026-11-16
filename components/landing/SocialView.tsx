@@ -1,56 +1,15 @@
 import React from 'react'
 import { MessageCircle, ExternalLink } from 'lucide-react'
-import type { SocialMetadata, ThemeFont, ThemeColor } from '@/types/database'
+import type { SocialMetadata } from '@/types/database'
+import { getAvatarSrc, isCustomAvatarUrl } from '@/lib/avatars'
+import { resolveTagTheme } from '@/lib/tag-theme'
+import { AvatarWithLightbox } from '@/components/ui/AvatarWithLightbox'
 
 export interface SocialViewProps {
   metadata: Partial<SocialMetadata> & Record<string, any>
+  avatarId?: string | null
   className?: string
   isPreview?: boolean
-}
-
-const FONT_MAP: Record<ThemeFont, string> = {
-  sans: 'font-sans',
-  serif: 'font-serif',
-  mono: 'font-mono',
-}
-
-interface ColorThemeConfig {
-  hex: string
-  underlineClass: string
-  iconColorClass: string
-  buttonHoverClass: string
-  focusRingClass: string
-}
-
-const COLOR_MAP: Record<ThemeColor, ColorThemeConfig> = {
-  orange: {
-    hex: '#FF5C00',
-    underlineClass: 'border-[#FF5C00]',
-    iconColorClass: 'text-[#FF5C00]',
-    buttonHoverClass: 'hover:border-[#FF5C00] hover:bg-[#FF5C00]/5',
-    focusRingClass: 'focus-visible:outline-[#FF5C00]',
-  },
-  black: {
-    hex: '#000000',
-    underlineClass: 'border-black',
-    iconColorClass: 'text-black',
-    buttonHoverClass: 'hover:border-black hover:bg-black/5',
-    focusRingClass: 'focus-visible:outline-black',
-  },
-  emerald: {
-    hex: '#10B981',
-    underlineClass: 'border-[#10B981]',
-    iconColorClass: 'text-[#10B981]',
-    buttonHoverClass: 'hover:border-[#10B981] hover:bg-[#10B981]/5',
-    focusRingClass: 'focus-visible:outline-[#10B981]',
-  },
-  blue: {
-    hex: '#3B82F6',
-    underlineClass: 'border-[#3B82F6]',
-    iconColorClass: 'text-[#3B82F6]',
-    buttonHoverClass: 'hover:border-[#3B82F6] hover:bg-[#3B82F6]/5',
-    focusRingClass: 'focus-visible:outline-[#3B82F6]',
-  },
 }
 
 function InstagramIcon({
@@ -103,17 +62,16 @@ function LinkedinIcon({
   )
 }
 
-export function SocialView({ metadata, className, isPreview = false }: SocialViewProps) {
+export function SocialView({ metadata, avatarId, className, isPreview = false }: SocialViewProps) {
   const { name, bio, wa, ig, linkedin } = metadata
+  const { fontClass, accent, isDark } = resolveTagTheme(metadata)
+  const effectiveColor = accent.hex
 
-  // Parse theme settings with fallbacks
-  const themeFontKey: ThemeFont = (metadata.theme_font as ThemeFont) || 'sans'
-  const themeColorKey: ThemeColor = (metadata.theme_color as ThemeColor) === 'black' ? 'orange' : (metadata.theme_color as ThemeColor) || 'orange'
-  const isDark = (metadata.page_theme || metadata.pageTheme) === 'dark'
-
-  const fontClass = FONT_MAP[themeFontKey] || FONT_MAP.sans
-  const colorConfig = COLOR_MAP[themeColorKey] || COLOR_MAP.orange
-  const effectiveColor = colorConfig.hex
+  const resolvedAvatarInput = avatarId ?? metadata.avatar_url ?? metadata.avatar_id ?? 'love'
+  const avatarSrc = getAvatarSrc(resolvedAvatarInput)
+  const isCustomAvatar = isCustomAvatarUrl(avatarSrc)
+  const displayName = name?.trim() || (isPreview ? 'Your Full Name' : 'Verto User')
+  const displayBio = bio?.trim() || (isPreview ? 'Add a brief bio or headline here' : '')
 
   // In live preview mode, provide realistic sample links if user has not entered any yet
   const showFallbackLinks = isPreview && !wa && !ig && !linkedin
@@ -123,107 +81,123 @@ export function SocialView({ metadata, className, isPreview = false }: SocialVie
 
   const waUrl = effectiveWa ? `https://wa.me/${effectiveWa.replace(/[^0-9]/g, '')}` : null
   const igUrl = effectiveIg ? `https://instagram.com/${effectiveIg.replace(/^@/, '')}` : null
-  const linkedinUrl = effectiveLinkedin ? (effectiveLinkedin.startsWith('http') ? effectiveLinkedin : `https://${effectiveLinkedin}`) : null
+  const linkedinUrl = effectiveLinkedin
+    ? effectiveLinkedin.startsWith('http')
+      ? effectiveLinkedin
+      : `https://${effectiveLinkedin}`
+    : null
+
+  const socialLinks = [
+    waUrl
+      ? {
+          key: 'wa',
+          label: 'WhatsApp',
+          href: waUrl,
+          icon: (
+            <MessageCircle
+              className="w-5 h-5 shrink-0"
+              strokeWidth={1.75}
+              style={{ color: effectiveColor }}
+            />
+          ),
+        }
+      : null,
+    igUrl
+      ? {
+          key: 'ig',
+          label: 'Instagram',
+          href: igUrl,
+          icon: <InstagramIcon className="w-5 h-5 shrink-0" style={{ color: effectiveColor }} />,
+        }
+      : null,
+    linkedinUrl
+      ? {
+          key: 'linkedin',
+          label: 'LinkedIn',
+          href: linkedinUrl,
+          icon: <LinkedinIcon className="w-5 h-5 shrink-0" style={{ color: effectiveColor }} />,
+        }
+      : null,
+  ].filter(Boolean) as { key: string; label: string; href: string; icon: React.ReactNode }[]
 
   return (
     <main
       className={`flex flex-col justify-between transition-colors duration-150 ${
         isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
       } ${
-        className || 'min-h-screen px-4 py-12'
-      } ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
-      style={{ '--theme-accent': colorConfig.hex } as React.CSSProperties}
+        isPreview ? 'pt-10 pb-6 px-4' : 'min-h-screen px-4 py-12'
+      } ${className || ''} ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
+      style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
     >
       <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center text-center">
-        {/* Profile Header */}
+        {/* Personal Profile Header */}
         <div className="mb-8">
-          <h1 className={`text-2xl font-bold leading-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            {name || (isPreview ? 'Your Full Name' : 'Verto User')}
-          </h1>
-          <div
-            className="w-8 border-b-2 mx-auto mt-2 mb-3"
+          <AvatarWithLightbox
+            src={avatarSrc}
+            alt={`${displayName} avatar`}
+            isCustom={isCustomAvatar}
+            interactive={!isPreview}
+            className={`w-20 h-20 rounded-full border-2 mx-auto mb-4 overflow-hidden flex items-center justify-center ${
+              isDark ? 'bg-neutral-800' : 'bg-gray-50'
+            }`}
             style={{ borderColor: effectiveColor }}
           />
-          {(bio || isPreview) && (
-            <p className={`text-base leading-normal max-w-xs mx-auto ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
-              {bio || (isPreview ? 'Add a brief bio or headline here' : '')}
+
+          <h1
+            className={`text-2xl font-bold leading-tight break-words ${
+              isDark ? 'text-white' : 'text-gray-900'
+            }`}
+          >
+            {displayName}
+          </h1>
+
+          {displayBio && (
+            <p
+              className={`mt-1.5 text-sm leading-relaxed max-w-xs mx-auto break-words ${
+                isDark ? 'text-neutral-300' : 'text-gray-600'
+              }`}
+            >
+              {displayBio}
             </p>
           )}
+
+          <div
+            className="w-8 h-0.5 mx-auto mt-3.5 rounded-full"
+            style={{ backgroundColor: effectiveColor }}
+          />
         </div>
 
         {/* Links Stack */}
-        <div className="space-y-3 w-full">
-          {waUrl && (
-            <a
-              href={waUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                isDark
-                  ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800'
-                  : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <MessageCircle
-                  className="w-5 h-5 shrink-0"
+        {socialLinks.length > 0 && (
+          <div className="space-y-3 w-full">
+            {socialLinks.map((item) => (
+              <a
+                key={item.key}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                  isDark
+                    ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800 focus-visible:outline-white'
+                    : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-gray-900'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {item.icon}
+                  <span className="truncate">{item.label}</span>
+                </div>
+                <ExternalLink
+                  className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}
                   strokeWidth={1.75}
-                  style={{ color: effectiveColor }}
                 />
-                <span>WhatsApp</span>
-              </div>
-              <ExternalLink className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-500' : 'text-gray-400'}`} strokeWidth={1.75} />
-            </a>
-          )}
-
-          {igUrl && (
-            <a
-              href={igUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                isDark
-                  ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800'
-                  : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <InstagramIcon
-                  className="w-5 h-5 shrink-0"
-                  style={{ color: effectiveColor }}
-                />
-                <span>Instagram</span>
-              </div>
-              <ExternalLink className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-500' : 'text-gray-400'}`} strokeWidth={1.75} />
-            </a>
-          )}
-
-          {linkedinUrl && (
-            <a
-              href={linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-all duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                isDark
-                  ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800'
-                  : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <LinkedinIcon
-                  className="w-5 h-5 shrink-0"
-                  style={{ color: effectiveColor }}
-                />
-                <span>LinkedIn</span>
-              </div>
-              <ExternalLink className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-500' : 'text-gray-400'}`} strokeWidth={1.75} />
-            </a>
-          )}
-        </div>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       <footer className="text-center pt-8">
-        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-500' : 'text-gray-400'}`}>
+        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
           Powered by Verto
         </p>
       </footer>
