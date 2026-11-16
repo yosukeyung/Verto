@@ -5,7 +5,7 @@ import { ZoomIn, Move, Loader2 } from 'lucide-react'
 
 const CROP_VIEW_SIZE = 208
 const OUTPUT_SIZE = 400
-const WEBP_QUALITY = 0.82
+const IMAGE_QUALITY = 0.82
 
 interface AvatarCropperProps {
   imageSrc: string
@@ -16,6 +16,7 @@ interface AvatarCropperProps {
 export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperProps) {
   const imgRef = useRef<HTMLImageElement | null>(null)
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [zoom, setZoom] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
@@ -51,9 +52,15 @@ export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperP
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.currentTarget
+    setLoadError(null)
     setNaturalSize({ w: target.naturalWidth, h: target.naturalHeight })
     setZoom(1)
     setOffset({ x: 0, y: 0 })
+  }
+
+  const handleImageError = () => {
+    setNaturalSize(null)
+    setLoadError('Unable to decode this image format. Please choose a JPEG, PNG, or WebP photo.')
   }
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -108,14 +115,27 @@ export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperP
       ctx.drawImage(img, drawX, drawY, drawW, drawH)
 
       canvas.toBlob(
-        (blob) => {
-          setIsExporting(false)
-          if (blob) {
-            onComplete(blob)
+        (webpBlob) => {
+          if (webpBlob && webpBlob.type === 'image/webp') {
+            setIsExporting(false)
+            onComplete(webpBlob)
+            return
           }
+
+          // iOS Safari fallback: toBlob('image/webp') silently falls back to PNG; re-encode as JPEG
+          canvas.toBlob(
+            (jpegBlob) => {
+              setIsExporting(false)
+              if (jpegBlob) {
+                onComplete(jpegBlob)
+              }
+            },
+            'image/jpeg',
+            IMAGE_QUALITY
+          )
         },
         'image/webp',
-        WEBP_QUALITY
+        IMAGE_QUALITY
       )
     } catch {
       setIsExporting(false)
@@ -143,6 +163,7 @@ export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperP
             alt="Crop preview"
             draggable={false}
             onLoad={handleImageLoad}
+            onError={handleImageError}
             className="absolute max-w-none pointer-events-none select-none"
             style={{
               left: '50%',
@@ -158,6 +179,12 @@ export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperP
           <Move className="w-3.5 h-3.5" strokeWidth={1.75} />
           <span>Drag to reposition inside circle</span>
         </p>
+
+        {loadError && (
+          <p role="alert" className="text-xs text-center text-red-600 dark:text-red-400 font-medium">
+            {loadError}
+          </p>
+        )}
 
         {/* Zoom Slider */}
         <div className="w-full max-w-[240px] flex items-center gap-3">

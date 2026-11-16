@@ -229,9 +229,16 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
     e.target.value = ''
     if (!file) return
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-    if (!allowedTypes.includes(file.type)) {
-      setAvatarError('Unsupported format. Please select a JPEG, PNG, or WebP image.')
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/heic',
+      'image/heif',
+    ]
+    const hasAllowedExt = /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)
+    if (!(allowedTypes.includes(file.type) || (!file.type && hasAllowedExt))) {
+      setAvatarError('Unsupported format. Please select a JPEG, PNG, WebP, or HEIC image.')
       return
     }
 
@@ -288,11 +295,12 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
         }
 
         const filePath = `${user.id}/avatar.webp`
+        const contentType = stagedAvatarBlob.type || 'image/jpeg'
         const { error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(filePath, stagedAvatarBlob, {
             upsert: true,
-            contentType: 'image/webp',
+            contentType,
           })
 
         if (uploadError) {
@@ -566,7 +574,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                     onChange={handleFileSelect}
                     className="hidden"
                   />
@@ -579,7 +587,7 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
                     <span>Upload Custom Photo</span>
                   </button>
                   <p className="text-[11px] text-center text-gray-500 dark:text-neutral-400">
-                    JPEG, PNG, or WebP up to 5 MB
+                    JPEG, PNG, WebP, or HEIC up to 5 MB
                   </p>
                   {avatarError && (
                     <p
