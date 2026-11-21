@@ -11,6 +11,7 @@ import { ProfileModal } from '@/components/ui/ProfileModal'
 import { ThemeSwitch } from '@/components/ui/ThemeSwitch'
 import { DashboardTutorial } from '@/components/dashboard/DashboardTutorial'
 import { signOutAction } from '@/app/dashboard/actions'
+import { getTagDisplayName } from '@/lib/tag-label'
 import { UserProvider, useUser, type UserProfile } from '@/components/providers/UserContext'
 
 interface DashboardManagerProps {
@@ -37,7 +38,11 @@ function DashboardContent({
       : initialTags[0]?.tag_id || ''
   )
 
-  const activeTag = tags.find((t) => t.tag_id === selectedTagId)
+  const activeTagIndex = tags.findIndex((t) => t.tag_id === selectedTagId)
+  const activeTag = activeTagIndex >= 0 ? tags[activeTagIndex] : undefined
+  const activeTagDisplayName = activeTag
+    ? getTagDisplayName(activeTag, activeTagIndex)
+    : ''
 
   const handleSelectTag = (tagId: string) => {
     setSelectedTagId(tagId)
@@ -115,9 +120,9 @@ function DashboardContent({
 
             {/* Public URL display */}
             <div className="py-2 px-3 rounded-lg bg-gray-50 border border-gray-200 dark:bg-neutral-950 dark:border-neutral-800">
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-600 dark:text-neutral-400">
-                <span>Public URL:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">/t/{selectedTagId}</span>
+              <div className="flex items-center gap-2 text-xs font-mono text-gray-600 dark:text-neutral-400 min-w-0">
+                <span className="shrink-0">Public URL:</span>
+                <span className="font-semibold text-gray-900 dark:text-white truncate">/t/{selectedTagId}</span>
               </div>
             </div>
 
@@ -125,6 +130,7 @@ function DashboardContent({
             <TagSettingsForm
               key={selectedTagId}
               activeTag={activeTag}
+              defaultDisplayName={activeTagDisplayName}
               profileFullName={profile.full_name}
               profileAvatarId={profile.avatar_id}
               onSaveSuccess={handleSaveSuccess}

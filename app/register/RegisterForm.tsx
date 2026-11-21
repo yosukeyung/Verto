@@ -1,19 +1,17 @@
 'use client'
 
-import { Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { Navbar } from '@/components/layout/Navbar'
+import { TAG_LABEL_MAX_LENGTH } from '@/lib/tag-label'
+import { registerWithTag } from './actions'
 
-function RegisterForm() {
+function RegisterForm({ tagId }: { tagId: string }) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const tagId = searchParams.get('tag_id') || ''
 
-  const AVATAR_IDS = ['love', 'eat', 'sleep', 'angry', 'cry', 'study'] as const
-
+  const [tagName, setTagName] = useState('Your Tag 1')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -28,6 +26,11 @@ function RegisterForm() {
     e.preventDefault()
     setError(null)
     setNotice(null)
+
+    if (!tagName.trim()) {
+      setError('Please enter a Tag Name.')
+      return
+    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
@@ -53,37 +56,25 @@ function RegisterForm() {
       // Ignore localStorage error
     }
 
-    const supabase = createClient()
-
-    const randomAvatarId = AVATAR_IDS[Math.floor(Math.random() * AVATAR_IDS.length)]
-
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const res = await registerWithTag({
+      tagId,
+      tagLabel: tagName,
+      fullName,
       email,
       password,
-      options: {
-        data: {
-          full_name: fullName.trim(),
-          avatar_id: randomAvatarId,
-        },
-      },
     })
 
-    if (signUpError) {
-      setError(signUpError.message)
+    if ('error' in res) {
+      setError(res.error)
       setLoading(false)
       return
     }
 
-    if (data.session) {
-      // Session immediately active, route to claim flow
-      if (tagId) {
-        router.push(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`)
-      } else {
-        router.push('/dashboard')
-      }
+    if (res.signedIn) {
+      router.push(`/dashboard?tag=${encodeURIComponent(res.tagId)}`)
       router.refresh()
     } else {
-      setNotice('Registration successful. Please check your email to verify your account.')
+      setNotice('Account created and tag linked. Please sign in to continue.')
       setLoading(false)
     }
   }
@@ -99,12 +90,9 @@ function RegisterForm() {
               Register Your Tag
             </h1>
             <div className="w-8 border-b border-orange-500 mt-2 mb-3" />
-            {tagId && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-sm font-mono font-medium">
-                <span>Tag ID:</span>
-                <span className="text-gray-900">{tagId}</span>
-              </div>
-            )}
+            <p className="text-sm text-gray-600">
+              Create your account and give your new Verto tag a name.
+            </p>
           </div>
 
           {error && (
@@ -127,6 +115,29 @@ function RegisterForm() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label
+                htmlFor="tagName"
+                className="block text-sm font-medium text-gray-700 mb-1.5"
+              >
+                Tag Name
+              </label>
+              <input
+                id="tagName"
+                type="text"
+                required
+                maxLength={TAG_LABEL_MAX_LENGTH}
+                value={tagName}
+                onChange={(e) => setTagName(e.target.value)}
+                placeholder="Your Tag 1"
+                aria-describedby="tagName-helper"
+                className="w-full h-11 px-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              />
+              <p id="tagName-helper" className="text-xs text-gray-500 mt-1.5">
+                Shown in your dashboard. You can rename it anytime.
+              </p>
+            </div>
+
             <div>
               <label
                 htmlFor="fullName"
@@ -266,14 +277,6 @@ function RegisterForm() {
   )
 }
 
-export default function RegisterPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" strokeWidth={1.75} />
-      </div>
-    }>
-      <RegisterForm />
-    </Suspense>
-  )
+export default function RegisterPage({ initialTagId }: { initialTagId: string }) {
+  return <RegisterForm tagId={initialTagId} />
 }

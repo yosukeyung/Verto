@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server'
+import { normalizeTagId } from '@/lib/tag-id'
 import { SocialView } from '@/components/landing/SocialView'
 import { LostFoundView } from '@/components/landing/LostFoundView'
 import { EventHubView } from '@/components/landing/EventHubView'
@@ -13,7 +14,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function TagPage({ params }: TagPageProps) {
   const { id } = await params
-  const cleanId = id?.trim()
+  const cleanId = normalizeTagId(id)
 
   if (!cleanId) {
     return <NotFoundView />
@@ -23,25 +24,23 @@ export default async function TagPage({ params }: TagPageProps) {
   const supabase = await createServiceClient()
   const { data, error } = await supabase
     .from('tags')
-    .select('*')
+    .select('tag_id, owner_id, active_mode, metadata')
     .eq('tag_id', cleanId)
-    .single()
+    .maybeSingle()
 
-  const tag = data as TagRow | null
+  const tag = data as Pick<TagRow, 'tag_id' | 'owner_id' | 'active_mode' | 'metadata'> | null
 
-  if (error || !tag) {
+  if (error || !tag || !tag.owner_id) {
     return <NotFoundView />
   }
 
   let ownerAvatarId: string | null = null
-  if (tag.owner_id) {
-    const { data: ownerProfile } = await (supabase.from('users') as any)
-      .select('avatar_id')
-      .eq('id', tag.owner_id)
-      .maybeSingle()
+  const { data: ownerProfile } = await (supabase.from('users') as any)
+    .select('avatar_id')
+    .eq('id', tag.owner_id)
+    .maybeSingle()
 
-    ownerAvatarId = ownerProfile?.avatar_id ?? null
-  }
+  ownerAvatarId = ownerProfile?.avatar_id ?? null
 
   const rawMetadata = (tag.metadata as Record<string, any>) || {}
   const theme_font: ThemeFont = rawMetadata.theme_font || 'sans'

@@ -39,6 +39,7 @@ export interface LostAndFoundMetadata {
   item_name: string
   wa_number: string
   custom_message?: string | null
+  item_photo_url?: string | null
   theme_font?: ThemeFont
   theme_color?: ThemeColor
   page_theme?: PageTheme
@@ -79,6 +80,7 @@ export interface UserRow {
 export interface TagRow {
   tag_id: string
   owner_id: string | null
+  label?: string | null
   active_mode: ActiveMode
   metadata: TagMetadata
   updated_at: string
@@ -93,6 +95,7 @@ export type Database = {
         Row: TagRow
         Insert: {
           active_mode?: ActiveMode
+          label?: string | null
           metadata?: Json
           owner_id?: string | null
           tag_id: string
@@ -100,6 +103,7 @@ export type Database = {
         }
         Update: {
           active_mode?: ActiveMode
+          label?: string | null
           metadata?: Json
           owner_id?: string | null
           tag_id?: string

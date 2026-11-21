@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { isValidTagId } from '@/lib/tag-id'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -16,22 +18,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { tag_id } = await request.json()
+    const body = await request.json()
+    const tag_id = body?.tag_id
 
-    if (!tag_id) {
+    if (!isValidTagId(tag_id)) {
       return NextResponse.json(
-        { error: 'tag_id is required' },
+        { error: 'Invalid tag_id.' },
         { status: 400 }
       )
     }
 
     const serviceClient = await createServiceClient()
-    
-    // Set owner_id = null for the specific tag owned by this user
-    const { error: updateError } = await (serviceClient.from('tags') as any)
-      .update({ owner_id: null })
+
+    // Detach tag and wipe PII/metadata atomically only if owned by caller
+    const { data: unclaimedTag, error: updateError } = await (serviceClient.from('tags') as any)
+      .update({
+        owner_id: null,
+        label: null,
+        active_mode: 'social',
+        metadata: {},
+        updated_at: new Date().toISOString(),
+      })
       .eq('tag_id', tag_id)
       .eq('owner_id', user.id)
+      .select('tag_id')
+      .maybeSingle()
 
     if (updateError) {
       console.error('[POST /api/tags/unclaim]', updateError)
@@ -41,8 +52,26 @@ export async function POST(request: Request) {
       )
     }
 
+    if (!unclaimedTag) {
+      return NextResponse.json(
+        { error: 'Tag not found.' },
+        { status: 404 }
+      )
+    }
+
+    const { error: storageError } = await serviceClient.storage
+      .from('avatars')
+      .remove([`${user.id}/item_${tag_id}.webp`])
+
+    if (storageError) {
+      console.error('[POST /api/tags/unclaim] storage remove error:', storageError)
+    }
+
+    revalidatePath('/dashboard')
+    revalidatePath(`/t/${tag_id}`)
+
     return NextResponse.json({ success: true })
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: 'Invalid request body.' },
       { status: 400 }

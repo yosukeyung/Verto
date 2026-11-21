@@ -1,15 +1,13 @@
 'use client'
 
-import { Suspense, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Navbar } from '@/components/layout/Navbar'
 
-function LoginForm() {
+function LoginForm({ tagId }: { tagId: string | null }) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const tagId = searchParams.get('tag_id')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -60,9 +58,8 @@ function LoginForm() {
             </h1>
             <div className="w-8 border-b border-orange-500 mt-2 mb-3" />
             {tagId && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-sm font-mono font-medium">
-                <span>Tag ID:</span>
-                <span className="text-gray-900">{tagId}</span>
+              <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-orange-50 border border-orange-200 text-orange-700 text-xs font-medium">
+                <span>Sign in to claim your scanned Verto tag.</span>
               </div>
             )}
           </div>
@@ -153,14 +150,10 @@ function LoginForm() {
   )
 }
 
-export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" strokeWidth={1.75} />
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
-  )
+export default function LoginPage({
+  initialTagId = null,
+}: {
+  initialTagId?: string | null
+}) {
+  return <LoginForm tagId={initialTagId} />
 }

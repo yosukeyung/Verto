@@ -1,63 +1,77 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@/lib/supabase/middleware'
-import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import type { Database, TagRow } from '@/types/database'
+import { isReservedTagId, normalizeTagId } from '@/lib/tag-id'
+
+function applyResponseCookies(source: NextResponse, target: NextResponse): NextResponse {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie)
+  })
+  return target
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
   // ─── /t/[id] — NFC tap intercept ──────────────────────────────────────────
   // Handled server-side per RULES.md: never rely on client-side useEffect.
-  if (pathname.startsWith('/t/')) {
-    const tagId = pathname.split('/t/')[1]?.trim()
-
-    if (!tagId) {
+  if (pathname === '/t' || pathname.startsWith('/t/')) {
+    if (pathname === '/t' || pathname === '/t/') {
       return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // Service-role client: bypasses RLS for unauthenticated NFC taps.
-    // READ-ONLY here — no writes performed.
-    // Must use supabase-js createClient to avoid injecting cookies which overrides service role.
+    const match = pathname.match(/^\/t\/([^/]+)$/)
+    if (!match) {
+      return NextResponse.next()
+    }
+
+    let decoded = ''
+    try {
+      decoded = decodeURIComponent(match[1])
+    } catch {
+      return NextResponse.rewrite(new URL('/t/invalid/not-found', request.url))
+    }
+
+    const tagId = normalizeTagId(decoded)
+    if (!tagId) {
+      return NextResponse.rewrite(new URL('/t/invalid/not-found', request.url))
+    }
+
+    // Service-role client: bypasses RLS for unauthenticated NFC taps (read-only minimal columns).
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data, error } = await supabase
+    const { data: tag, error } = await supabase
       .from('tags')
-      .select('tag_id, owner_id, active_mode, metadata, updated_at')
+      .select('tag_id, owner_id')
       .eq('tag_id', tagId)
-      .single()
-
-    const tag = data as TagRow | null
+      .maybeSingle()
 
     // Tag does not exist in DB — render the fallback page.
     if (error || !tag) {
-      return NextResponse.rewrite(new URL(`/t/${tagId}/not-found`, request.url))
+      return NextResponse.rewrite(
+        new URL(`/t/${encodeURIComponent(tagId)}/not-found`, request.url)
+      )
     }
 
     // Tag exists but unclaimed (no owner).
     if (!tag.owner_id) {
       // Super admin tag (000) is reserved — never expose register page for it.
-      if (tagId === '000') {
+      if (isReservedTagId(tagId)) {
         return NextResponse.redirect(new URL('/', request.url))
       }
 
-      // Check if a logged-in user is tapping an unclaimed tag (multi-tag claim).
-      const { data: { user } } = await supabase.auth.getUser()
+      // Check caller session via cookie-aware middleware client (never cookie-less service client).
+      const { supabase: authSupabase, supabaseResponse } = await createMiddlewareClient(request)
+      const { data: { user } } = await authSupabase.auth.getUser()
 
-      if (user) {
-        // Redirect to dashboard claim flow to bind tag to existing account.
-        return NextResponse.redirect(
-          new URL(`/dashboard/claim?tag_id=${tagId}`, request.url)
-        )
-      }
+      const redirectUrl = user
+        ? new URL(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`, request.url)
+        : new URL(`/register?tag_id=${encodeURIComponent(tagId)}`, request.url)
 
-      // Unauthenticated tap on unclaimed tag — invite-only registration.
-      return NextResponse.redirect(
-        new URL(`/register?tag_id=${tagId}`, request.url)
-      )
+      return applyResponseCookies(supabaseResponse, NextResponse.redirect(redirectUrl))
     }
 
     // Tag is claimed and configured — let the /t/[id] page render SSR.
@@ -72,15 +86,21 @@ export async function proxy(request: NextRequest) {
   // ─── /register — invite-only guard ────────────────────────────────────────
   // Accessing /register without a valid tag_id param redirects to landing page.
   if (pathname === '/register') {
-    const tagId = searchParams.get('tag_id')
-    if (!tagId) {
-      return NextResponse.redirect(new URL('/', request.url))
+    const tagId = normalizeTagId(searchParams.get('tag_id'))
+    if (!tagId || isReservedTagId(tagId)) {
+      return applyResponseCookies(
+        supabaseResponse,
+        NextResponse.redirect(new URL('/', request.url))
+      )
     }
 
     // Logged-in user visiting /register with a tag_id → dashboard claim flow.
     if (user) {
-      return NextResponse.redirect(
-        new URL(`/dashboard/claim?tag_id=${tagId}`, request.url)
+      return applyResponseCookies(
+        supabaseResponse,
+        NextResponse.redirect(
+          new URL(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`, request.url)
+        )
       )
     }
 
@@ -90,14 +110,20 @@ export async function proxy(request: NextRequest) {
   // ─── /dashboard — auth guard ───────────────────────────────────────────────
   if (pathname.startsWith('/dashboard')) {
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      return applyResponseCookies(
+        supabaseResponse,
+        NextResponse.redirect(new URL('/login', request.url))
+      )
     }
     return supabaseResponse
   }
 
   // ─── /login — redirect already-logged-in users to dashboard ───────────────
   if (pathname === '/login' && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return applyResponseCookies(
+      supabaseResponse,
+      NextResponse.redirect(new URL('/dashboard', request.url))
+    )
   }
 
   return supabaseResponse

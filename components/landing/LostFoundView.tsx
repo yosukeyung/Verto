@@ -6,6 +6,10 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import type { LostAndFoundMetadata } from '@/types/database'
 import { getAvatarSrc, isCustomAvatarUrl } from '@/lib/avatars'
 import { resolveTagTheme } from '@/lib/tag-theme'
+import {
+  sanitizeAvatarStorageUrl,
+  sanitizeProfileAvatarId,
+} from '@/lib/url-validation'
 import { AvatarWithLightbox } from '@/components/ui/AvatarWithLightbox'
 
 export interface LostFoundViewProps {
@@ -26,10 +30,12 @@ export function LostFoundView({
   className,
   isPreview = false,
 }: LostFoundViewProps) {
+  const [isItemOpen, setIsItemOpen] = useState(false)
   const [isOwnerOpen, setIsOwnerOpen] = useState(false)
   const shouldReduceMotion = useReducedMotion()
 
   const rawItemName = metadata.item_name ?? metadata.itemName ?? ''
+  const rawItemPhotoUrl = metadata.item_photo_url ?? metadata.itemPhotoUrl ?? ''
   const rawOwnerName = metadata.owner_name ?? metadata.ownerName ?? ''
   const rawCustomMessage = metadata.custom_message ?? metadata.customMessage ?? ''
   const rawWaNumber = metadata.wa_number ?? metadata.waNumber ?? ''
@@ -38,21 +44,30 @@ export function LostFoundView({
   const effectiveColor = accent.hex
 
   const displayItemName = String(rawItemName).trim() || (isPreview ? 'Motorcycle Keys' : 'Lost Item')
+  const itemPhotoUrl =
+    sanitizeAvatarStorageUrl(rawItemPhotoUrl, { allowBlob: isPreview }) ?? ''
+  const hasItemPhoto = itemPhotoUrl.length > 0
+
   const displayOwnerName = String(rawOwnerName).trim() || (isPreview ? 'Owner Name' : 'Owner')
   const trimmedMessage = String(rawCustomMessage).trim()
   const displayMessage = trimmedMessage.length > 0 ? trimmedMessage : DEFAULT_SUBHEADLINE
 
-  const resolvedAvatarSrc = getAvatarSrc({
-    avatar_id: avatarId ?? metadata.avatar_id,
-    avatar_url: avatarUrl ?? metadata.avatar_url,
-  })
-  const isCustomAvatar = isCustomAvatarUrl(resolvedAvatarSrc)
+  const validatedOwnerAvatar =
+    sanitizeProfileAvatarId(avatarId, { allowBlob: isPreview }) ??
+    sanitizeAvatarStorageUrl(avatarUrl, { allowBlob: isPreview }) ??
+    sanitizeProfileAvatarId(metadata.avatar_id, { allowBlob: isPreview }) ??
+    sanitizeAvatarStorageUrl(metadata.avatar_url, { allowBlob: isPreview }) ??
+    'love'
+  const resolvedAvatarSrc = getAvatarSrc(validatedOwnerAvatar, { allowBlob: isPreview })
+  const isCustomAvatar = isCustomAvatarUrl(resolvedAvatarSrc, { allowBlob: isPreview })
 
   const trimmedWa = String(rawWaNumber).trim()
   const displayWaNumber = trimmedWa || (isPreview ? '6281234567890' : 'Not provided')
   const cleanWa = String(rawWaNumber).replace(/[^0-9]/g, '')
   const template = `Hello, I found your item (${displayItemName}). I found this contact information on your Verto tag.`
   const waUrl = cleanWa ? `https://wa.me/${cleanWa}?text=${encodeURIComponent(template)}` : null
+
+  const morphDuration = shouldReduceMotion ? 0 : 0.18
 
   return (
     <main
@@ -97,40 +112,104 @@ export function LostFoundView({
               : 'bg-gray-50/50 border-gray-200'
             }`}
         >
+          {/* ITEM Section (Conditional Dropdown only when item photo exists) */}
           <div className="min-w-0">
-            <p
-              className={`text-[10px] font-medium tracking-wider uppercase ${isDark ? 'text-neutral-400' : 'text-gray-500'
-                }`}
-            >
-              ITEM
-            </p>
-            <p
-              className={`mt-0.5 text-sm font-bold break-words ${isDark ? 'text-white' : 'text-gray-900'
-                }`}
-            >
-              {displayItemName}
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p
+                className={`text-[10px] font-medium tracking-wider uppercase ${isDark ? 'text-neutral-400' : 'text-gray-500'
+                  }`}
+              >
+                ITEM
+              </p>
+
+              {hasItemPhoto && (
+                <button
+                  type="button"
+                  onClick={() => setIsItemOpen((prev) => !prev)}
+                  aria-expanded={isItemOpen}
+                  aria-controls="lost-found-item-details"
+                  aria-label={isItemOpen ? 'Hide item photo' : 'Show item photo'}
+                  className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer before:absolute before:-inset-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 ${isDark
+                      ? 'border-neutral-700 bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white focus-visible:outline-white'
+                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-gray-900'
+                    }`}
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform duration-200 ${isItemOpen ? 'rotate-180' : ''
+                      }`}
+                    strokeWidth={2}
+                  />
+                </button>
+              )}
+            </div>
+
+            <AnimatePresence mode="wait" initial={false}>
+              {isItemOpen && hasItemPhoto ? (
+                <motion.div
+                  key="item-expanded"
+                  id="lost-found-item-details"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: morphDuration, ease: 'easeOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-1.5 flex items-center gap-3">
+                    <AvatarWithLightbox
+                      src={itemPhotoUrl}
+                      alt={displayItemName}
+                      isCustom
+                      lightboxShape="rounded"
+                      interactive={!isPreview}
+                      className={`w-16 h-16 rounded-lg border shrink-0 overflow-hidden flex items-center justify-center ${isDark ? 'border-neutral-800 bg-neutral-900' : 'border-gray-200 bg-white'
+                        }`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-sm font-bold break-words ${isDark ? 'text-white' : 'text-gray-900'
+                          }`}
+                      >
+                        {displayItemName}
+                      </p>
+                      {!isPreview && (
+                        <p
+                          className={`text-[11px] mt-0.5 ${isDark ? 'text-neutral-400' : 'text-gray-500'
+                            }`}
+                        >
+                          Tap photo to enlarge
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.p
+                  key="item-collapsed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: morphDuration }}
+                  className={`mt-0.5 text-sm font-bold break-words ${isDark ? 'text-white' : 'text-gray-900'
+                    }`}
+                >
+                  {displayItemName}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </div>
 
+          {/* OWNER Section (In-place Morphing, zero name duplication) */}
           <div
             className={`pt-3 border-t min-w-0 ${isDark ? 'border-neutral-800' : 'border-gray-200/80'
               }`}
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p
-                  className={`text-[10px] font-medium tracking-wider uppercase ${isDark ? 'text-neutral-400' : 'text-gray-500'
-                    }`}
-                >
-                  OWNER
-                </p>
-                <p
-                  className={`mt-0.5 text-sm font-bold break-words ${isDark ? 'text-white' : 'text-gray-900'
-                    }`}
-                >
-                  {displayOwnerName}
-                </p>
-              </div>
+              <p
+                className={`text-[10px] font-medium tracking-wider uppercase ${isDark ? 'text-neutral-400' : 'text-gray-500'
+                  }`}
+              >
+                OWNER
+              </p>
 
               <button
                 type="button"
@@ -138,7 +217,7 @@ export function LostFoundView({
                 aria-expanded={isOwnerOpen}
                 aria-controls="lost-found-owner-details"
                 aria-label={isOwnerOpen ? 'Hide owner details' : 'Show owner details'}
-                className={`relative w-9 h-9 rounded-full border flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer before:absolute before:-inset-1 focus-visible:outline-2 focus-visible:outline-offset-2 ${isDark
+                className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer before:absolute before:-inset-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 ${isDark
                     ? 'border-neutral-700 bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white focus-visible:outline-white'
                     : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-gray-900'
                   }`}
@@ -151,24 +230,23 @@ export function LostFoundView({
               </button>
             </div>
 
-            <AnimatePresence initial={false}>
-              {isOwnerOpen && (
+            <AnimatePresence mode="wait" initial={false}>
+              {isOwnerOpen ? (
                 <motion.div
+                  key="owner-expanded"
                   id="lost-found-owner-details"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: 'easeOut' }}
+                  transition={{ duration: morphDuration, ease: 'easeOut' }}
                   className="overflow-hidden"
                 >
-                  <div
-                    className={`border-t border-dashed pt-3 mt-3 flex items-center gap-3 ${isDark ? 'border-neutral-800' : 'border-gray-200/80'
-                      }`}
-                  >
+                  <div className="mt-1.5 flex items-center gap-3">
                     <AvatarWithLightbox
                       src={resolvedAvatarSrc}
                       alt={`${displayOwnerName} avatar`}
                       isCustom={isCustomAvatar}
+                      lightboxShape="circle"
                       interactive={!isPreview}
                       className={`w-11 h-11 rounded-full border shrink-0 overflow-hidden flex items-center justify-center ${isDark ? 'bg-neutral-800' : 'bg-white'
                         }`}
@@ -176,7 +254,7 @@ export function LostFoundView({
                     />
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`text-sm font-semibold break-words ${isDark ? 'text-white' : 'text-gray-900'
+                        className={`text-sm font-bold break-words ${isDark ? 'text-white' : 'text-gray-900'
                           }`}
                       >
                         {displayOwnerName}
@@ -190,6 +268,18 @@ export function LostFoundView({
                     </div>
                   </div>
                 </motion.div>
+              ) : (
+                <motion.p
+                  key="owner-collapsed"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: morphDuration }}
+                  className={`mt-0.5 text-sm font-bold break-words ${isDark ? 'text-white' : 'text-gray-900'
+                    }`}
+                >
+                  {displayOwnerName}
+                </motion.p>
               )}
             </AnimatePresence>
           </div>

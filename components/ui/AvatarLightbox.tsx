@@ -10,6 +10,7 @@ interface AvatarLightboxProps {
   src: string
   alt: string
   isCustom?: boolean
+  shape?: 'circle' | 'rounded'
   onClose: () => void
 }
 
@@ -18,6 +19,7 @@ export function AvatarLightbox({
   src,
   alt,
   isCustom = false,
+  shape = 'circle',
   onClose,
 }: AvatarLightboxProps) {
   const [mounted, setMounted] = useState(false)
@@ -70,7 +72,11 @@ export function AvatarLightbox({
             exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
             transition={{ duration: shouldReduceMotion ? 0 : 0.18, ease: 'easeOut' }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden border-2 border-white/20 bg-neutral-900 shadow-2xl flex items-center justify-center"
+            className={`relative overflow-hidden border-2 border-white/20 bg-neutral-900 shadow-2xl flex items-center justify-center ${
+              shape === 'rounded'
+                ? 'w-72 h-72 sm:w-80 sm:h-80 rounded-2xl'
+                : 'w-64 h-64 sm:w-72 sm:h-72 rounded-full'
+            }`}
           >
             <img
               src={src}

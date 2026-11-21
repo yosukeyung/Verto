@@ -4,16 +4,26 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { ZoomIn, Move, Loader2 } from 'lucide-react'
 
 const CROP_VIEW_SIZE = 208
-const OUTPUT_SIZE = 400
+const DEFAULT_OUTPUT_SIZE = 400
 const IMAGE_QUALITY = 0.82
 
 interface AvatarCropperProps {
   imageSrc: string
+  shape?: 'circle' | 'square'
+  outputSize?: number
+  hintText?: string
   onCancel: () => void
   onComplete: (blob: Blob) => void
 }
 
-export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperProps) {
+export function AvatarCropper({
+  imageSrc,
+  shape = 'circle',
+  outputSize = DEFAULT_OUTPUT_SIZE,
+  hintText,
+  onCancel,
+  onComplete,
+}: AvatarCropperProps) {
   const imgRef = useRef<HTMLImageElement | null>(null)
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -96,19 +106,19 @@ export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperP
 
     try {
       const canvas = document.createElement('canvas')
-      canvas.width = OUTPUT_SIZE
-      canvas.height = OUTPUT_SIZE
+      canvas.width = outputSize
+      canvas.height = outputSize
       const ctx = canvas.getContext('2d')
       if (!ctx) {
         setIsExporting(false)
         return
       }
 
-      const ratio = OUTPUT_SIZE / CROP_VIEW_SIZE
+      const ratio = outputSize / CROP_VIEW_SIZE
       const drawW = displayW * ratio
       const drawH = displayH * ratio
-      const drawX = (OUTPUT_SIZE - drawW) / 2 + offset.x * ratio
-      const drawY = (OUTPUT_SIZE - drawH) / 2 + offset.y * ratio
+      const drawX = (outputSize - drawW) / 2 + offset.x * ratio
+      const drawY = (outputSize - drawH) / 2 + offset.y * ratio
 
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
@@ -145,17 +155,19 @@ export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperP
   return (
     <div className="flex-1 flex flex-col justify-between px-5 py-5">
       <div className="flex-1 flex flex-col items-center justify-center space-y-5">
-        {/* Circular Mask Crop Area */}
+        {/* Crop Mask Area */}
         <div
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
-          className={`relative w-52 h-52 rounded-full overflow-hidden border-2 border-[#FF5C00] bg-neutral-950 shadow-inner touch-none select-none ${
+          className={`relative w-52 h-52 ${
+            shape === 'square' ? 'rounded-2xl' : 'rounded-full'
+          } overflow-hidden border-2 border-[#FF5C00] bg-neutral-950 shadow-inner touch-none select-none ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
           }`}
           role="application"
-          aria-label="Drag to reposition profile photo"
+          aria-label="Drag to reposition photo"
         >
           <img
             ref={imgRef}
@@ -177,7 +189,12 @@ export function AvatarCropper({ imageSrc, onCancel, onComplete }: AvatarCropperP
 
         <p className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-neutral-400">
           <Move className="w-3.5 h-3.5" strokeWidth={1.75} />
-          <span>Drag to reposition inside circle</span>
+          <span>
+            {hintText ||
+              (shape === 'square'
+                ? 'Drag to frame photo inside square'
+                : 'Drag to reposition inside circle')}
+          </span>
         </p>
 
         {loadError && (

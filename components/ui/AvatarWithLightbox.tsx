@@ -7,6 +7,7 @@ interface AvatarWithLightboxProps {
   src: string
   alt: string
   isCustom?: boolean
+  lightboxShape?: 'circle' | 'rounded'
   interactive?: boolean
   className?: string
   style?: React.CSSProperties
@@ -16,6 +17,7 @@ export function AvatarWithLightbox({
   src,
   alt,
   isCustom = false,
+  lightboxShape = 'circle',
   interactive = true,
   className = '',
   style,
@@ -55,6 +57,7 @@ export function AvatarWithLightbox({
         src={src}
         alt={alt}
         isCustom={isCustom}
+        shape={lightboxShape}
         onClose={() => setIsLightboxOpen(false)}
       />
     </>

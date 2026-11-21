@@ -28,6 +28,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { AvatarCropper } from '@/components/ui/AvatarCropper'
 import { AvatarLightbox } from '@/components/ui/AvatarLightbox'
+import { formatTagModeLabel, getTagDisplayName } from '@/lib/tag-label'
 
 export { AVATARS, type AvatarOption }
 
@@ -90,7 +91,9 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   const [unclaimModalOpen, setUnclaimModalOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [confirmText, setConfirmText] = useState('')
-  const [userTags, setUserTags] = useState<{ tag_id: string; active_mode: string }[]>([])
+  const [userTags, setUserTags] = useState<
+    { tag_id: string; label?: string | null; active_mode: string }[]
+  >([])
   const [selectedTagToUnclaim, setSelectedTagToUnclaim] = useState('')
   const [isLoadingTags, setIsLoadingTags] = useState(false)
 
@@ -101,10 +104,10 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
   // Resolved avatar URLs across Navbar, Draft Profile, and Gallery
   const confirmedAvatarSrc = getAvatarSrc(profile)
   const isConfirmedCustom = isCustomAvatarUrl(confirmedAvatarSrc)
-  const draftAvatarSrc = getAvatarSrc(draftProfile.avatar_id)
-  const isDraftCustom = isCustomAvatarUrl(draftAvatarSrc)
-  const previewAvatarSrc = getAvatarSrc(previewAvatar)
-  const isPreviewCustom = isCustomAvatarUrl(previewAvatarSrc)
+  const draftAvatarSrc = getAvatarSrc(draftProfile.avatar_id, { allowBlob: true })
+  const isDraftCustom = isCustomAvatarUrl(draftAvatarSrc, { allowBlob: true })
+  const previewAvatarSrc = getAvatarSrc(previewAvatar, { allowBlob: true })
+  const isPreviewCustom = isCustomAvatarUrl(previewAvatarSrc, { allowBlob: true })
 
   // Revoke object URLs on unmount
   useEffect(() => {
@@ -886,9 +889,9 @@ export function ProfileModal({ onSignOut }: ProfileModalProps) {
             onChange={(e) => setSelectedTagToUnclaim(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 dark:border-neutral-800 dark:bg-neutral-900 dark:text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5C00]"
           >
-            {userTags.map((tag) => (
+            {userTags.map((tag, idx) => (
               <option key={tag.tag_id} value={tag.tag_id}>
-                {tag.tag_id} (Mode: {tag.active_mode})
+                {getTagDisplayName(tag, idx)} ({formatTagModeLabel(tag.active_mode)})
               </option>
             ))}
           </select>

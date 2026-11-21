@@ -17,8 +17,9 @@ export async function GET() {
 
   const serviceClient = await createServiceClient()
   const { data, error } = await (serviceClient.from('tags') as any)
-    .select('tag_id, active_mode')
+    .select('tag_id, label, active_mode')
     .eq('owner_id', user.id)
+    .order('tag_id', { ascending: true })
 
   if (error || !data) {
     return NextResponse.json(

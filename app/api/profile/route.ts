@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { isStaticAvatarId, sanitizeProfileAvatarId } from '@/lib/url-validation'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -53,18 +54,39 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { full_name, avatar_id } = await request.json()
+    const body = await request.json()
+    const rawFullName = body?.full_name
+    const rawAvatarId = body?.avatar_id
 
-    if (!full_name || !avatar_id) {
+    if (typeof rawFullName !== 'string') {
       return NextResponse.json(
-        { error: 'full_name and avatar_id are required' },
+        { error: 'Invalid full_name.' },
+        { status: 400 }
+      )
+    }
+
+    const trimmedName = rawFullName.trim()
+    if (!trimmedName || trimmedName.length > 100) {
+      return NextResponse.json(
+        { error: 'full_name must be between 1 and 100 characters.' },
+        { status: 400 }
+      )
+    }
+
+    const validAvatarId = sanitizeProfileAvatarId(rawAvatarId, {
+      expectedUserId: user.id,
+    })
+
+    if (!validAvatarId) {
+      return NextResponse.json(
+        { error: 'Invalid avatar_id.' },
         { status: 400 }
       )
     }
 
     const serviceClient = await createServiceClient()
     const { error: updateError } = await (serviceClient.from('users') as any)
-      .update({ full_name, avatar_id })
+      .update({ full_name: trimmedName, avatar_id: validAvatarId })
       .eq('id', user.id)
 
     if (updateError) {
@@ -75,12 +97,12 @@ export async function POST(request: Request) {
     }
 
     // Zero-orphan storage cleanup when switching back to a static Red Panda avatar
-    if (!/^https?:\/\//i.test(String(avatar_id))) {
+    if (isStaticAvatarId(validAvatarId)) {
       await serviceClient.storage.from('avatars').remove([`${user.id}/avatar.webp`])
     }
 
     return NextResponse.json({ success: true })
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: 'Invalid request body.' },
       { status: 400 }

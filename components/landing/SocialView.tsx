@@ -3,6 +3,11 @@ import { MessageCircle, ExternalLink } from 'lucide-react'
 import type { SocialMetadata } from '@/types/database'
 import { getAvatarSrc, isCustomAvatarUrl } from '@/lib/avatars'
 import { resolveTagTheme } from '@/lib/tag-theme'
+import {
+  buildInstagramUrl,
+  sanitizeLinkedInUrl,
+  sanitizeProfileAvatarId,
+} from '@/lib/url-validation'
 import { AvatarWithLightbox } from '@/components/ui/AvatarWithLightbox'
 
 export interface SocialViewProps {
@@ -67,9 +72,13 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
   const { fontClass, accent, isDark } = resolveTagTheme(metadata)
   const effectiveColor = accent.hex
 
-  const resolvedAvatarInput = avatarId ?? metadata.avatar_url ?? metadata.avatar_id ?? 'love'
-  const avatarSrc = getAvatarSrc(resolvedAvatarInput)
-  const isCustomAvatar = isCustomAvatarUrl(avatarSrc)
+  const validatedAvatarInput =
+    sanitizeProfileAvatarId(avatarId, { allowBlob: isPreview }) ??
+    sanitizeProfileAvatarId(metadata.avatar_id, { allowBlob: isPreview }) ??
+    sanitizeProfileAvatarId(metadata.avatar_url, { allowBlob: isPreview }) ??
+    'love'
+  const avatarSrc = getAvatarSrc(validatedAvatarInput, { allowBlob: isPreview })
+  const isCustomAvatar = isCustomAvatarUrl(avatarSrc, { allowBlob: isPreview })
   const displayName = name?.trim() || (isPreview ? 'Your Full Name' : 'Verto User')
   const displayBio = bio?.trim() || (isPreview ? 'Add a brief bio or headline here' : '')
 
@@ -79,13 +88,10 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
   const effectiveIg = showFallbackLinks ? 'username' : ig
   const effectiveLinkedin = showFallbackLinks ? 'https://linkedin.com/in/username' : linkedin
 
-  const waUrl = effectiveWa ? `https://wa.me/${effectiveWa.replace(/[^0-9]/g, '')}` : null
-  const igUrl = effectiveIg ? `https://instagram.com/${effectiveIg.replace(/^@/, '')}` : null
-  const linkedinUrl = effectiveLinkedin
-    ? effectiveLinkedin.startsWith('http')
-      ? effectiveLinkedin
-      : `https://${effectiveLinkedin}`
-    : null
+  const cleanWa = typeof effectiveWa === 'string' ? effectiveWa.replace(/[^0-9]/g, '') : ''
+  const waUrl = cleanWa ? `https://wa.me/${cleanWa}` : null
+  const igUrl = buildInstagramUrl(effectiveIg)
+  const linkedinUrl = sanitizeLinkedInUrl(effectiveLinkedin)
 
   const socialLinks = [
     waUrl

@@ -1,27 +1,31 @@
 import { notFound } from 'next/navigation'
 import { createServiceClient } from '@/lib/supabase/server'
+import { isReservedTagId, normalizeTagId } from '@/lib/tag-id'
 import RegisterClient from './RegisterForm'
+
+export const dynamic = 'force-dynamic'
 
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag_id?: string }>
+  searchParams: Promise<{ tag_id?: string | string[] }>
 }) {
   const params = await searchParams
-  const tag_id = params?.tag_id
+  const cleanTagId = normalizeTagId(params?.tag_id)
 
-  if (tag_id) {
-    const supabase = await createServiceClient()
-    const { data } = await supabase
-      .from('tags')
-      .select('tag_id')
-      .eq('tag_id', tag_id)
-      .single()
-
-    if (!data) {
-      notFound()
-    }
+  if (!cleanTagId || isReservedTagId(cleanTagId)) {
+    notFound()
   }
 
-  return <RegisterClient />
+  const supabase = await createServiceClient()
+  const { data: tag, error } = await (supabase.from('tags') as any)
+    .select('tag_id, owner_id')
+    .eq('tag_id', cleanTagId)
+    .maybeSingle()
+
+  if (error || !tag || tag.owner_id !== null || isReservedTagId(tag.tag_id)) {
+    notFound()
+  }
+
+  return <RegisterClient initialTagId={tag.tag_id} />
 }

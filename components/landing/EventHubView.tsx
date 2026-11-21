@@ -2,6 +2,7 @@ import React from 'react'
 import { ExternalLink } from 'lucide-react'
 import type { EventHubMetadata } from '@/types/database'
 import { resolveTagTheme } from '@/lib/tag-theme'
+import { sanitizeHttpsUrl } from '@/lib/url-validation'
 
 export interface EventHubViewProps {
   metadata: Partial<EventHubMetadata> & Record<string, any>
@@ -11,7 +12,7 @@ export interface EventHubViewProps {
 
 function formatUrlLabel(url: string): string {
   try {
-    const parsed = new URL(url.startsWith('http') ? url : `https://${url}`)
+    const parsed = new URL(url)
     return parsed.hostname.replace(/^www\./, '')
   } catch {
     return 'Visit Link'
@@ -35,15 +36,18 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
   type LinkItem = { url: string; title?: string | null }
 
   const rawLinks: LinkItem[] = []
-  if (link_1 && link_1.trim().length > 0) {
-    rawLinks.push({ url: link_1.trim(), title: metadata.link_1_title || metadata.link1_title })
+  const addLink = (rawUrl: unknown, rawTitle: unknown) => {
+    const validUrl = sanitizeHttpsUrl(rawUrl)
+    if (!validUrl) return
+    rawLinks.push({
+      url: validUrl,
+      title: typeof rawTitle === 'string' ? rawTitle : null,
+    })
   }
-  if (link_2 && link_2.trim().length > 0) {
-    rawLinks.push({ url: link_2.trim(), title: metadata.link_2_title || metadata.link2_title })
-  }
-  if (link_3 && link_3.trim().length > 0) {
-    rawLinks.push({ url: link_3.trim(), title: metadata.link_3_title || metadata.link3_title })
-  }
+
+  addLink(link_1, metadata.link_1_title || metadata.link1_title)
+  addLink(link_2, metadata.link_2_title || metadata.link2_title)
+  addLink(link_3, metadata.link_3_title || metadata.link3_title)
 
   const links: LinkItem[] =
     isPreview && rawLinks.length === 0
@@ -93,7 +97,7 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
         {links.length > 0 && (
           <div className="w-full max-w-[400px] mx-auto px-4 pt-3 space-y-3">
             {links.map((item, idx) => {
-              const fullUrl = item.url.startsWith('http') ? item.url : `https://${item.url}`
+              const fullUrl = item.url
               const customTitle = item.title?.trim()
               const label =
                 customTitle && customTitle.length > 0 ? customTitle : formatUrlLabel(item.url)

@@ -1,7 +1,13 @@
+import { isStaticAvatarId, sanitizeAvatarStorageUrl } from '@/lib/url-validation'
+
 export interface AvatarOption {
   id: string
   name: string
   src: string
+}
+
+export interface AvatarResolveOptions {
+  allowBlob?: boolean
 }
 
 export const AVATARS: AvatarOption[] = [
@@ -23,32 +29,44 @@ export type AvatarSourceInput =
   | null
   | undefined
 
-export function isCustomAvatarUrl(value?: string | null): boolean {
-  if (!value) return false
-  const trimmed = value.trim()
-  return /^(https?:\/\/|blob:)/i.test(trimmed)
+export function isCustomAvatarUrl(
+  value?: string | null,
+  options?: AvatarResolveOptions
+): boolean {
+  return Boolean(sanitizeAvatarStorageUrl(value, options))
 }
 
 export function getAvatarOption(avatarId?: string | null): AvatarOption {
   return AVATARS.find((a) => a.id === avatarId) ?? AVATARS[0]
 }
 
-export function getAvatarSrc(input: AvatarSourceInput): string {
+export function getAvatarSrc(
+  input: AvatarSourceInput,
+  options?: AvatarResolveOptions
+): string {
   if (!input) return AVATARS[0].src
 
   if (typeof input === 'string') {
     const trimmed = input.trim()
-    return isCustomAvatarUrl(trimmed) ? trimmed : getAvatarOption(trimmed).src
+    return sanitizeAvatarStorageUrl(trimmed, options) ?? getAvatarOption(trimmed).src
+  }
+
+  if (typeof input.avatar_id === 'string') {
+    const trimmedId = input.avatar_id.trim()
+    const validStorageFromId = sanitizeAvatarStorageUrl(trimmedId, options)
+    if (validStorageFromId) {
+      return validStorageFromId
+    }
+    if (isStaticAvatarId(trimmedId)) {
+      return getAvatarOption(trimmedId).src
+    }
   }
 
   const candidateUrl = input.custom_avatar_url || input.avatar_url
-  if (isCustomAvatarUrl(candidateUrl)) {
-    return candidateUrl!.trim()
+  const validCandidateUrl = sanitizeAvatarStorageUrl(candidateUrl, options)
+  if (validCandidateUrl) {
+    return validCandidateUrl
   }
 
-  if (isCustomAvatarUrl(input.avatar_id)) {
-    return input.avatar_id!.trim()
-  }
-
-  return getAvatarOption(input.avatar_id).src
+  return AVATARS[0].src
 }

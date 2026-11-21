@@ -1,6 +1,9 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Upload, Trash2, X, Image as ImageIcon } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
+import { AvatarCropper } from '@/components/ui/AvatarCropper'
 import type {
   ActiveMode,
   SocialMetadata,
@@ -62,9 +65,157 @@ export function SocialForm({ data, onChange }: SocialFormProps) {
 interface LostAndFoundFormProps {
   data: Partial<LostAndFoundMetadata>
   onChange: (data: Partial<LostAndFoundMetadata>) => void
+  onStageItemPhoto?: (blob: Blob, previewUrl: string) => void
+  onRemoveItemPhoto?: () => void
 }
 
-export function LostAndFoundForm({ data, onChange }: LostAndFoundFormProps) {
+export function LostAndFoundForm({
+  data,
+  onChange,
+  onStageItemPhoto,
+  onRemoveItemPhoto,
+}: LostAndFoundFormProps) {
+  const [mounted, setMounted] = useState(false)
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (cropperSrc) URL.revokeObjectURL(cropperSrc)
+    }
+  }, [cropperSrc])
+
+  useEffect(() => {
+    if (!cropperSrc) return
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        URL.revokeObjectURL(cropperSrc)
+        setCropperSrc(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [cropperSrc])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhotoError(null)
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/heic',
+      'image/heif',
+    ]
+    const hasAllowedExt = /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)
+    if (!(allowedTypes.includes(file.type) || (!file.type && hasAllowedExt))) {
+      setPhotoError('Unsupported format. Please select a JPEG, PNG, WebP, or HEIC image.')
+      return
+    }
+
+    const maxBytes = 5 * 1024 * 1024
+    if (file.size > maxBytes) {
+      setPhotoError('File exceeds the 5 MB limit. Please choose a smaller image.')
+      return
+    }
+
+    if (cropperSrc) URL.revokeObjectURL(cropperSrc)
+    setCropperSrc(URL.createObjectURL(file))
+  }
+
+  const handleCropComplete = (blob: Blob) => {
+    if (cropperSrc) {
+      URL.revokeObjectURL(cropperSrc)
+      setCropperSrc(null)
+    }
+    const previewUrl = URL.createObjectURL(blob)
+    if (onStageItemPhoto) {
+      onStageItemPhoto(blob, previewUrl)
+    } else {
+      onChange({ ...data, item_photo_url: previewUrl })
+    }
+  }
+
+  const handleRemove = () => {
+    setPhotoError(null)
+    if (onRemoveItemPhoto) {
+      onRemoveItemPhoto()
+    } else {
+      onChange({ ...data, item_photo_url: '' })
+    }
+  }
+
+  const hasPhoto = Boolean(data.item_photo_url && data.item_photo_url.trim().length > 0)
+
+  const cropModal =
+    mounted && cropperSrc
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="presentation"
+          >
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              aria-hidden="true"
+              onClick={() => {
+                URL.revokeObjectURL(cropperSrc)
+                setCropperSrc(null)
+              }}
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Crop item photo"
+              onClick={(e) => e.stopPropagation()}
+              className="relative z-10 w-full max-w-md bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]"
+            >
+              <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    URL.revokeObjectURL(cropperSrc)
+                    setCropperSrc(null)
+                  }}
+                  aria-label="Close cropper"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-900 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" strokeWidth={2} />
+                </button>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
+                  Crop Item Photo
+                </h3>
+                <div className="w-7" />
+              </div>
+              <div className="h-px bg-gray-100 dark:bg-neutral-800 mx-5" />
+              <AvatarCropper
+                imageSrc={cropperSrc}
+                shape="square"
+                outputSize={500}
+                hintText="Drag to frame item inside square"
+                onCancel={() => {
+                  URL.revokeObjectURL(cropperSrc)
+                  setCropperSrc(null)
+                }}
+                onComplete={handleCropComplete}
+              />
+            </div>
+          </div>,
+          document.body
+        )
+      : null
+
   return (
     <div className="space-y-4">
       <Input
@@ -108,6 +259,69 @@ export function LostAndFoundForm({ data, onChange }: LostAndFoundFormProps) {
           className="w-full h-24 p-3 rounded-lg border border-gray-200 text-base text-gray-900 placeholder:text-gray-400 bg-white dark:border-neutral-800 dark:text-white dark:placeholder:text-neutral-500 dark:bg-neutral-950 transition-colors duration-150 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"
         />
       </div>
+
+      {/* Optional Item Photo Upload */}
+      <div className="w-full space-y-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-neutral-300">
+          Item Photo (Optional)
+        </label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        {hasPhoto ? (
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-neutral-800 bg-gray-50/60 dark:bg-neutral-950">
+            <img
+              src={data.item_photo_url || ''}
+              alt="Item preview"
+              className="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-neutral-800 shrink-0"
+            />
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="h-10 px-3.5 rounded-lg border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-xs font-semibold text-gray-700 dark:text-neutral-200 hover:border-[#FF5C00] hover:text-[#FF5C00] inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <ImageIcon className="w-3.5 h-3.5" strokeWidth={2} />
+                <span>Change Photo</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="h-10 px-3.5 rounded-lg border border-red-200 dark:border-red-900/60 bg-white dark:bg-neutral-900 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                <span>Remove Photo</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full h-11 px-4 rounded-xl border border-dashed border-gray-300 dark:border-neutral-700 bg-gray-50/70 dark:bg-neutral-900/60 hover:border-[#FF5C00] hover:bg-orange-50/40 dark:hover:border-[#FF5C00] dark:hover:bg-orange-500/10 text-xs font-semibold text-gray-700 dark:text-neutral-200 inline-flex items-center justify-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5C00]"
+          >
+            <Upload className="w-4 h-4 text-[#FF5C00]" strokeWidth={2} />
+            <span>Upload Item Photo</span>
+          </button>
+        )}
+
+        <p className="text-xs text-gray-500 dark:text-neutral-400">
+          Helps finders identify your item. JPEG, PNG, WebP, or HEIC up to 5 MB.
+        </p>
+
+        {photoError && (
+          <p role="alert" className="text-xs text-red-600 dark:text-red-400 font-medium">
+            {photoError}
+          </p>
+        )}
+      </div>
+
+      {cropModal}
     </div>
   )
 }
@@ -246,18 +460,29 @@ interface ModeFormDispatcherProps {
   activeMode: ActiveMode
   metadata: Record<string, any>
   onChangeMetadata: (metadata: Record<string, any>) => void
+  onStageItemPhoto?: (blob: Blob, previewUrl: string) => void
+  onRemoveItemPhoto?: () => void
 }
 
 export function ModeFormDispatcher({
   activeMode,
   metadata,
   onChangeMetadata,
+  onStageItemPhoto,
+  onRemoveItemPhoto,
 }: ModeFormDispatcherProps) {
   if (activeMode === 'social') {
     return <SocialForm data={metadata} onChange={onChangeMetadata} />
   }
   if (activeMode === 'lost_and_found') {
-    return <LostAndFoundForm data={metadata} onChange={onChangeMetadata} />
+    return (
+      <LostAndFoundForm
+        data={metadata}
+        onChange={onChangeMetadata}
+        onStageItemPhoto={onStageItemPhoto}
+        onRemoveItemPhoto={onRemoveItemPhoto}
+      />
+    )
   }
   if (activeMode === 'event_hub') {
     return <EventHubForm data={metadata} onChange={onChangeMetadata} />
