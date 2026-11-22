@@ -131,26 +131,26 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
       className={`flex flex-col justify-between transition-colors duration-150 ${
         isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
       } ${
-        isPreview ? 'pt-10 pb-6 px-4' : 'min-h-screen px-4 py-12'
+        isPreview ? 'pt-10 pb-6 px-4' : 'min-h-dvh px-4 py-6 sm:py-12'
       } ${className || ''} ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
       style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
     >
       <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center text-center">
         {/* Personal Profile Header */}
-        <div className="mb-8">
+        <div className="mb-5 sm:mb-8">
           <AvatarWithLightbox
             src={avatarSrc}
             alt={`${displayName} avatar`}
             isCustom={isCustomAvatar}
             interactive={!isPreview}
-            className={`w-20 h-20 rounded-full border-2 mx-auto mb-4 overflow-hidden flex items-center justify-center ${
+            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 mx-auto mb-3 sm:mb-4 overflow-hidden flex items-center justify-center ${
               isDark ? 'bg-neutral-800' : 'bg-gray-50'
             }`}
             style={{ borderColor: effectiveColor }}
           />
 
           <h1
-            className={`text-2xl font-bold leading-tight break-words ${
+            className={`text-xl sm:text-2xl font-bold leading-tight break-words ${
               isDark ? 'text-white' : 'text-gray-900'
             }`}
           >
@@ -159,7 +159,7 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
 
           {displayBio && (
             <p
-              className={`mt-1.5 text-sm leading-relaxed max-w-xs mx-auto break-words ${
+              className={`mt-1 sm:mt-1.5 text-sm leading-snug sm:leading-relaxed max-w-xs mx-auto break-words ${
                 isDark ? 'text-neutral-300' : 'text-gray-600'
               }`}
             >
@@ -168,21 +168,21 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
           )}
 
           <div
-            className="w-8 h-0.5 mx-auto mt-3.5 rounded-full"
+            className="w-8 h-0.5 mx-auto mt-2.5 sm:mt-3.5 rounded-full"
             style={{ backgroundColor: effectiveColor }}
           />
         </div>
 
         {/* Links Stack */}
         {socialLinks.length > 0 && (
-          <div className="space-y-3 w-full">
+          <div className="space-y-2.5 sm:space-y-3 w-full">
             {socialLinks.map((item) => (
               <a
                 key={item.key}
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                className={`w-full h-11 px-4 sm:px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
                   isDark
                     ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800 focus-visible:outline-white'
                     : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-gray-900'
@@ -202,7 +202,7 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
         )}
       </div>
 
-      <footer className="text-center pt-8">
+      <footer className="text-center pt-5 sm:pt-8">
         <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
           Powered by Verto
         </p>

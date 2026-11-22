@@ -176,10 +176,6 @@
       display: none;
     }
   }
-
-  .accent-line {
-    border-bottom: 1px solid var(--orange-500);
-  }
 }
 
 @keyframes slide-up {

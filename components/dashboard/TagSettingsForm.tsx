@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState, useMemo, useEffect } from 'react'
-import { Check, ExternalLink, Loader2, Sun, Moon } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Check, ExternalLink, Loader2, Sun, Moon, X } from 'lucide-react'
 import type { TagRow, ActiveMode, ThemeFont, ThemeColor, PageTheme } from '@/types/database'
 import { ModeSelector } from '@/components/dashboard/ModeSelector'
 import { ModeFormDispatcher } from '@/components/dashboard/ModeForms'
@@ -80,6 +81,31 @@ export function TagSettingsForm({
   const [activeThemeTab, setActiveThemeTab] = useState<'typography' | 'color'>('typography')
   const [isSaving, setIsSaving] = useState(false)
   const [toast, setToast] = useState<{ type: ToastType; message: React.ReactNode } | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false)
+  const [modalError, setModalError] = useState<string | null>(null)
+
+  const livePageUrl = `/t/${activeTag.tag_id}`
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!showUnsavedModal) return
+    document.body.style.overflow = 'hidden'
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isSaving) {
+        setShowUnsavedModal(false)
+        setModalError(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [showUnsavedModal, isSaving])
 
   useEffect(() => {
     return () => {
@@ -154,120 +180,266 @@ export function TagSettingsForm({
     setMetadata((prev) => ({ ...prev, item_photo_url: null }))
   }
 
-  // Save changes to Supabase
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!hasChanges || isSaving) return
+  // Save changes to Supabase (shared by Save button and Save & Open guard)
+  const performSave = async (): Promise<{ ok: boolean; error?: string }> => {
+    if (isSaving) return { ok: false }
+    if (!hasChanges) return { ok: true }
 
     const cleanLabel = sanitizeTagLabel(tagLabel)
     if (!cleanLabel) {
-      setToast({ type: 'error', message: 'Tag Name is required (1 to 50 characters).' })
-      return
+      const errorMsg = 'Tag Name is required (1 to 50 characters).'
+      setToast({ type: 'error', message: errorMsg })
+      return { ok: false, error: errorMsg }
     }
 
     setIsSaving(true)
     setToast(null)
 
-    const finalTheme = metadata.page_theme || metadata.pageTheme || 'light'
-    let resolvedItemPhotoUrl: string | null = metadata.item_photo_url
-      ? String(metadata.item_photo_url).trim()
-      : null
+    try {
+      const finalTheme = metadata.page_theme || metadata.pageTheme || 'light'
+      let resolvedItemPhotoUrl: string | null = metadata.item_photo_url
+        ? String(metadata.item_photo_url).trim()
+        : null
 
-    if (activeMode === 'lost_and_found' && stagedItemPhotoBlob) {
-      const supabase = createClient()
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
+      if (activeMode === 'lost_and_found' && stagedItemPhotoBlob) {
+        const supabase = createClient()
+        const {
+          data: { user },
+          error: authError,
+        } = await supabase.auth.getUser()
 
-      if (authError || !user) {
-        setToast({ type: 'error', message: 'Session expired. Please sign in again.' })
-        setIsSaving(false)
-        return
+        if (authError || !user) {
+          const errorMsg = 'Session expired. Please sign in again.'
+          setToast({ type: 'error', message: errorMsg })
+          setIsSaving(false)
+          return { ok: false, error: errorMsg }
+        }
+
+        const filePath = `${user.id}/item_${activeTag.tag_id}.webp`
+        const contentType = stagedItemPhotoBlob.type || 'image/jpeg'
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, stagedItemPhotoBlob, {
+            upsert: true,
+            contentType,
+          })
+
+        if (uploadError) {
+          const errorMsg = `Item photo upload failed: ${uploadError.message}`
+          setToast({ type: 'error', message: errorMsg })
+          setIsSaving(false)
+          return { ok: false, error: errorMsg }
+        }
+
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+        resolvedItemPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`
       }
 
-      const filePath = `${user.id}/item_${activeTag.tag_id}.webp`
-      const contentType = stagedItemPhotoBlob.type || 'image/jpeg'
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, stagedItemPhotoBlob, {
-          upsert: true,
-          contentType,
-        })
-
-      if (uploadError) {
-        setToast({ type: 'error', message: `Item photo upload failed: ${uploadError.message}` })
-        setIsSaving(false)
-        return
+      const finalMetadata: Record<string, any> = {
+        theme_font: 'sans',
+        theme_color: 'orange',
+        ...metadata,
+        page_theme: finalTheme,
+        pageTheme: finalTheme,
       }
 
-      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
-      resolvedItemPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`
-    }
+      if (activeMode === 'lost_and_found') {
+        finalMetadata.item_photo_url = resolvedItemPhotoUrl || null
+      } else if (stagedItemPhotoPreviewUrl && finalMetadata.item_photo_url === stagedItemPhotoPreviewUrl) {
+        // Never persist a local blob preview URL when saving a different mode
+        finalMetadata.item_photo_url = initialMetadata.item_photo_url ?? null
+      }
 
-    const finalMetadata: Record<string, any> = {
-      theme_font: 'sans',
-      theme_color: 'orange',
-      ...metadata,
-      page_theme: finalTheme,
-      pageTheme: finalTheme,
-    }
+      const res = await saveTagSettings(activeTag.tag_id, activeMode, finalMetadata, cleanLabel)
 
-    if (activeMode === 'lost_and_found') {
-      finalMetadata.item_photo_url = resolvedItemPhotoUrl || null
-    } else if (stagedItemPhotoPreviewUrl && finalMetadata.item_photo_url === stagedItemPhotoPreviewUrl) {
-      // Never persist a local blob preview URL when saving a different mode
-      finalMetadata.item_photo_url = initialMetadata.item_photo_url ?? null
-    }
+      if (res?.error) {
+        setToast({ type: 'error', message: res.error })
+        setIsSaving(false)
+        return { ok: false, error: res.error }
+      }
 
-    const res = await saveTagSettings(activeTag.tag_id, activeMode, finalMetadata, cleanLabel)
+      if (stagedItemPhotoPreviewUrl) {
+        URL.revokeObjectURL(stagedItemPhotoPreviewUrl)
+        setStagedItemPhotoPreviewUrl(null)
+      }
+      setStagedItemPhotoBlob(null)
+      setTagLabel(cleanLabel)
+      setMetadata(finalMetadata)
 
-    if (res?.error) {
-      setToast({ type: 'error', message: res.error })
+      const updatedTag: TagRow = {
+        ...activeTag,
+        label: cleanLabel,
+        active_mode: activeMode,
+        metadata: finalMetadata,
+        updated_at: new Date().toISOString(),
+      }
+
+      onSaveSuccess(updatedTag)
+
+      setToast({
+        type: 'success',
+        message: (
+          <span className="flex items-center gap-1.5 flex-wrap">
+            <span>Tag settings saved successfully.</span>
+            <a
+              href={livePageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5 font-bold text-green-950 dark:text-green-100 underline underline-offset-2 hover:opacity-80 transition-opacity"
+            >
+              <span>View Live Page</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          </span>
+        ),
+      })
       setIsSaving(false)
-      return
+      return { ok: true }
+    } catch {
+      const errorMsg = 'Failed to save changes. Please try again.'
+      setToast({ type: 'error', message: errorMsg })
+      setIsSaving(false)
+      return { ok: false, error: errorMsg }
     }
-
-    if (stagedItemPhotoPreviewUrl) {
-      URL.revokeObjectURL(stagedItemPhotoPreviewUrl)
-      setStagedItemPhotoPreviewUrl(null)
-    }
-    setStagedItemPhotoBlob(null)
-    setTagLabel(cleanLabel)
-    setMetadata(finalMetadata)
-
-    const updatedTag: TagRow = {
-      ...activeTag,
-      label: cleanLabel,
-      active_mode: activeMode,
-      metadata: finalMetadata,
-      updated_at: new Date().toISOString(),
-    }
-
-    onSaveSuccess(updatedTag)
-
-    setToast({
-      type: 'success',
-      message: (
-        <span className="flex items-center gap-1.5 flex-wrap">
-          <span>Tag settings saved successfully.</span>
-          <a
-            href={`/t/${activeTag.tag_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-0.5 font-bold text-green-950 dark:text-green-100 underline underline-offset-2 hover:opacity-80 transition-opacity"
-          >
-            <span>View Live Page</span>
-            <span aria-hidden="true">↗</span>
-          </a>
-        </span>
-      ),
-    })
-    setIsSaving(false)
   }
 
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!hasChanges || isSaving) return
+    await performSave()
+  }
+
+  const handleOpenLivePageClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!hasChanges) return
+    e.preventDefault()
+    setModalError(null)
+    setShowUnsavedModal(true)
+  }
+
+  const handleCloseUnsavedModal = () => {
+    if (isSaving) return
+    setShowUnsavedModal(false)
+    setModalError(null)
+  }
+
+  const handleSaveAndOpen = async () => {
+    setModalError(null)
+    const result = await performSave()
+    if (!result.ok) {
+      setModalError(
+        result.error || 'Failed to save changes. Please review your fields and try again.'
+      )
+      return
+    }
+    setShowUnsavedModal(false)
+    setModalError(null)
+    const openedWindow = window.open(livePageUrl, '_blank')
+    if (openedWindow) {
+      openedWindow.opener = null
+    } else {
+      window.location.assign(livePageUrl)
+    }
+  }
+
+  const handleOpenWithoutSaving = () => {
+    if (isSaving) return
+    setShowUnsavedModal(false)
+    setModalError(null)
+    window.open(livePageUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const unsavedChangesModal =
+    mounted && showUnsavedModal
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
+            role="presentation"
+            onClick={handleCloseUnsavedModal}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="unsaved-changes-title"
+              aria-describedby="unsaved-changes-desc"
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <h3
+                  id="unsaved-changes-title"
+                  className="text-base font-semibold text-gray-900 dark:text-white tracking-tight"
+                >
+                  Unsaved Changes
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleCloseUnsavedModal}
+                  disabled={isSaving}
+                  aria-label="Close modal"
+                  className="relative w-8 h-8 -mr-1.5 -mt-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-900 inline-flex items-center justify-center shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer before:absolute before:-inset-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 dark:focus-visible:outline-white"
+                >
+                  <X className="w-4 h-4" strokeWidth={2} />
+                </button>
+              </div>
+
+              <p
+                id="unsaved-changes-desc"
+                className="text-sm text-gray-600 dark:text-neutral-300 leading-relaxed"
+              >
+                You have unsaved changes. Would you like to save them before opening the live page?
+              </p>
+
+              {modalError && (
+                <p
+                  role="alert"
+                  className="text-xs font-medium text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 rounded-lg px-3 py-2"
+                >
+                  {modalError}
+                </p>
+              )}
+
+              <div className="flex flex-col gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={handleSaveAndOpen}
+                  disabled={isSaving}
+                  className="w-full h-11 px-4 rounded-lg bg-[#FF5C00] hover:bg-[#e04e00] text-white text-sm font-semibold transition-colors inline-flex items-center justify-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5C00]"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save &amp; Open</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenWithoutSaving}
+                  disabled={isSaving}
+                  className="w-full h-11 px-4 rounded-lg border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800 text-gray-800 dark:text-neutral-100 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 dark:focus-visible:outline-white"
+                >
+                  Open Without Saving
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCloseUnsavedModal}
+                  disabled={isSaving}
+                  className="w-full h-11 px-4 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-900 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 dark:focus-visible:outline-white"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null
+
   return (
-    <form onSubmit={handleSave} className="space-y-6">
+    <>
+      <form onSubmit={handleSave} className="space-y-6">
       <Input
         id="dashboard-tag-name"
         label="Tag Name"
@@ -280,7 +452,6 @@ export function TagSettingsForm({
           setToast(null)
         }}
         placeholder={defaultDisplayName}
-        helperText="Friendly name shown in your dashboard. Does not change your public URL."
       />
 
       <ModeSelector
@@ -379,9 +550,10 @@ export function TagSettingsForm({
             })()}
 
             <a
-              href={`/t/${activeTag.tag_id}`}
+              href={livePageUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleOpenLivePageClick}
               className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 hover:text-black dark:text-neutral-400 dark:hover:text-white mt-2 transition-colors"
             >
               <span>Open Live Page</span>
@@ -559,5 +731,7 @@ export function TagSettingsForm({
         </div>
       </div>
     </form>
+    {unsavedChangesModal}
+    </>
   )
 }

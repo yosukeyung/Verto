@@ -25,7 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${geistMono.variable}`} suppressHydrationWarning>
-      <body className="antialiased bg-white text-gray-900 dark:bg-black dark:text-white font-sans min-h-screen">
+      <body className="antialiased bg-white text-gray-900 dark:bg-black dark:text-white font-sans min-h-dvh">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

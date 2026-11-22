@@ -23,14 +23,11 @@ import {
   AVATARS,
   getAvatarSrc,
   isCustomAvatarUrl,
-  type AvatarOption,
 } from '@/lib/avatars'
 import { createClient } from '@/lib/supabase/client'
 import { AvatarCropper } from '@/components/ui/AvatarCropper'
 import { AvatarLightbox } from '@/components/ui/AvatarLightbox'
 import { formatTagModeLabel, getTagDisplayName } from '@/lib/tag-label'
-
-export { AVATARS, type AvatarOption }
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 

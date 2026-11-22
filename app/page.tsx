@@ -12,7 +12,7 @@ export default function HomePage() {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
 
   const waOrderUrl =
-    'https://wa.me/6281234567890?text=' +
+    'https://wa.me/628113490080?text=' +
     encodeURIComponent('Hello Verto, I would like to order an NFC tag.')
 
   return (

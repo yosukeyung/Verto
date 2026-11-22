@@ -1,4 +1,3 @@
-import React from 'react'
 import type { TagRow } from '@/types/database'
 import { getTagDisplayName } from '@/lib/tag-label'
 

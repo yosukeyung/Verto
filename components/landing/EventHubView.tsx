@@ -59,7 +59,7 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
       className={`flex flex-col justify-between transition-colors duration-150 ${
         isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
       } ${
-        isPreview ? '' : 'min-h-screen'
+        isPreview ? '' : 'min-h-dvh'
       } ${className || ''} ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
       style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
     >
@@ -68,12 +68,12 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
         <header
           className={`w-full ${
             isDark ? accent.bannerGradientDark : accent.bannerGradientLight
-          } ${isPreview ? 'pt-12 pb-6' : 'pt-14 pb-8'}`}
+          } ${isPreview ? 'pt-12 pb-6' : 'pt-8 pb-5 sm:pt-14 sm:pb-8'}`}
         >
           <div className="w-full max-w-[400px] mx-auto px-4 grid grid-cols-12 items-end gap-3">
             <div className="col-span-8 text-left min-w-0">
               <h1
-                className={`text-2xl font-bold leading-tight tracking-tight break-words ${
+                className={`text-xl sm:text-2xl font-bold leading-tight tracking-tight break-words ${
                   isDark ? 'text-white' : 'text-gray-900'
                 }`}
               >
@@ -81,7 +81,7 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
               </h1>
               {displayDescription && (
                 <p
-                  className={`mt-2 text-sm leading-relaxed break-words ${
+                  className={`mt-1.5 sm:mt-2 text-sm leading-snug sm:leading-relaxed break-words ${
                     isDark ? 'text-neutral-300' : 'text-gray-700'
                   }`}
                 >
@@ -95,7 +95,7 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
 
         {/* Body / Links Stack */}
         {links.length > 0 && (
-          <div className="w-full max-w-[400px] mx-auto px-4 pt-3 space-y-3">
+          <div className="w-full max-w-[400px] mx-auto px-4 pt-3 space-y-2.5 sm:space-y-3">
             {links.map((item, idx) => {
               const fullUrl = item.url
               const customTitle = item.title?.trim()
@@ -108,7 +108,7 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
                   href={fullUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-full h-11 px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                  className={`w-full h-11 px-4 sm:px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
                     isDark
                       ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800 focus-visible:outline-white'
                       : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-gray-900'
@@ -128,7 +128,7 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
         )}
       </div>
 
-      <footer className={`text-center px-4 ${isPreview ? 'pt-6 pb-5' : 'pt-8 pb-10'}`}>
+      <footer className={`text-center px-4 ${isPreview ? 'pt-6 pb-5' : 'pt-5 pb-6 sm:pt-8 sm:pb-10'}`}>
         <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
           Powered by Verto
         </p>

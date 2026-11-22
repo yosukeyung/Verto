@@ -16,7 +16,6 @@ import { UserProvider, useUser, type UserProfile } from '@/components/providers/
 
 interface DashboardManagerProps {
   initialTags: TagRow[]
-  userEmail: string
   userId?: string
   hasCompletedOnboarding?: boolean
   initialSelectedTagId?: string
@@ -25,7 +24,6 @@ interface DashboardManagerProps {
 
 function DashboardContent({
   initialTags,
-  userEmail,
   userId,
   hasCompletedOnboarding,
   initialSelectedTagId,
@@ -118,14 +116,6 @@ function DashboardContent({
               onSelectTag={handleSelectTag}
             />
 
-            {/* Public URL display */}
-            <div className="py-2 px-3 rounded-lg bg-gray-50 border border-gray-200 dark:bg-neutral-950 dark:border-neutral-800">
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-600 dark:text-neutral-400 min-w-0">
-                <span className="shrink-0">Public URL:</span>
-                <span className="font-semibold text-gray-900 dark:text-white truncate">/t/{selectedTagId}</span>
-              </div>
-            </div>
-
             {/* Tag Settings Form (Single Column Vertical Stack with Tabbed Controls & Action Buttons) */}
             <TagSettingsForm
               key={selectedTagId}
@@ -144,7 +134,6 @@ function DashboardContent({
 
 export function DashboardManager({
   initialTags,
-  userEmail,
   userId,
   hasCompletedOnboarding,
   initialSelectedTagId,
@@ -154,7 +143,6 @@ export function DashboardManager({
     <UserProvider initialProfile={initialProfile}>
       <DashboardContent
         initialTags={initialTags}
-        userEmail={userEmail}
         userId={userId}
         hasCompletedOnboarding={hasCompletedOnboarding}
         initialSelectedTagId={initialSelectedTagId}

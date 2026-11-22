@@ -72,14 +72,14 @@ export function LostFoundView({
   return (
     <main
       className={`flex flex-col justify-between transition-colors duration-150 ${isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
-        } ${isPreview ? 'pt-10 pb-6 px-4 select-none' : 'min-h-screen px-4 py-12'
+        } ${isPreview ? 'pt-10 pb-6 px-4 select-none' : 'min-h-dvh px-4 py-6 sm:py-12'
         } ${className || ''} ${fontClass}`}
       style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
     >
       <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center text-center">
         {/* Top Accent Shield Icon */}
         <div
-          className="w-12 h-12 rounded-full border flex items-center justify-center mx-auto mb-4"
+          className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border flex items-center justify-center mx-auto mb-3 sm:mb-4"
           style={{
             backgroundColor: `${effectiveColor}18`,
             borderColor: `${effectiveColor}38`,
@@ -91,7 +91,7 @@ export function LostFoundView({
 
         {/* Static Alert Headline */}
         <h1
-          className={`text-2xl font-bold leading-tight tracking-tight ${isDark ? 'text-white' : 'text-gray-900'
+          className={`text-xl sm:text-2xl font-bold leading-tight tracking-tight ${isDark ? 'text-white' : 'text-gray-900'
             }`}
         >
           You found something!
@@ -99,7 +99,7 @@ export function LostFoundView({
 
         {/* Sub-headline (Custom Message or Fallback) */}
         <p
-          className={`mt-2 text-sm leading-relaxed max-w-xs mx-auto whitespace-pre-wrap break-words ${isDark ? 'text-neutral-300' : 'text-gray-600'
+          className={`mt-1.5 sm:mt-2 text-sm leading-snug sm:leading-relaxed max-w-xs mx-auto whitespace-pre-wrap break-words ${isDark ? 'text-neutral-300' : 'text-gray-600'
             }`}
         >
           {displayMessage}
@@ -107,7 +107,7 @@ export function LostFoundView({
 
         {/* Structured Info Card */}
         <div
-          className={`mt-6 rounded-xl border p-4 text-left space-y-3 ${isDark
+          className={`mt-4 sm:mt-6 rounded-xl border p-3.5 sm:p-4 text-left space-y-2.5 sm:space-y-3 ${isDark
               ? 'bg-neutral-950/60 border-neutral-800'
               : 'bg-gray-50/50 border-gray-200'
             }`}
@@ -200,7 +200,7 @@ export function LostFoundView({
 
           {/* OWNER Section (In-place Morphing, zero name duplication) */}
           <div
-            className={`pt-3 border-t min-w-0 ${isDark ? 'border-neutral-800' : 'border-gray-200/80'
+            className={`pt-2.5 sm:pt-3 border-t min-w-0 ${isDark ? 'border-neutral-800' : 'border-gray-200/80'
               }`}
           >
             <div className="flex items-center justify-between gap-3">
@@ -286,7 +286,7 @@ export function LostFoundView({
         </div>
 
         {/* Primary CTA */}
-        <div className="mt-5">
+        <div className="mt-4 sm:mt-5">
           {waUrl || isPreview ? (
             <a
               href={waUrl || '#'}
@@ -316,7 +316,7 @@ export function LostFoundView({
         </div>
       </div>
 
-      <footer className="text-center pt-8">
+      <footer className="text-center pt-5 sm:pt-8">
         <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
           Powered by Verto
         </p>

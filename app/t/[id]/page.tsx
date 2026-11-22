@@ -72,7 +72,7 @@ export default async function TagPage({ params }: TagPageProps) {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-200 ${
+      className={`min-h-dvh transition-colors duration-200 ${
         isDark ? 'dark bg-neutral-900 text-white' : 'bg-white text-gray-900'
       }`}
     >

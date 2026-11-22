@@ -54,7 +54,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   return (
     <DashboardManager
       initialTags={(tags as TagRow[]) || []}
-      userEmail={user.email || ''}
       userId={user.id}
       hasCompletedOnboarding={hasCompletedOnboarding}
       initialSelectedTagId={resolvedSearchParams?.tag}
