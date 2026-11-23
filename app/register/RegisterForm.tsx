@@ -271,6 +271,20 @@ function RegisterForm({ tagId }: { tagId: string }) {
               Sign In
             </Link>
           </p>
+
+          <p className="text-center text-sm text-gray-600 mt-2">
+            Need help?{' '}
+            <Link
+              href={
+                tagId
+                  ? `/support?from=${encodeURIComponent(`/register?tag_id=${encodeURIComponent(tagId)}`)}`
+                  : '/support?from=%2Fregister'
+              }
+              className="inline-flex items-center min-h-11 px-1 text-orange-600 hover:underline font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 rounded"
+            >
+              Contact Support
+            </Link>
+          </p>
         </div>
       </main>
     </div>

@@ -1,36 +1,29 @@
+import Link from 'next/link'
+
 interface FooterProps {
-  phoneNumber?: string
-  supportMessage?: string
   className?: string
+  supportHref?: string
 }
 
 export function Footer({
-  phoneNumber = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '6281234567890',
-  supportMessage = 'Hello Verto Support, I need help with...',
   className = '',
+  supportHref = '/support?from=%2F',
 }: FooterProps) {
-  const cleanPhone = phoneNumber.replace(/[^0-9]/g, '')
-  const waSupportUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-    supportMessage
-  )}`
-
   return (
     <footer
-      className={`w-full border-t border-gray-100 bg-white py-6 ${className}`}
+      className={`w-full border-t border-gray-100 bg-white dark:border-neutral-800 dark:bg-black py-6 transition-colors duration-150 ${className}`}
     >
       <div className="mx-auto flex max-w-2xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-600 dark:text-neutral-400">
           &copy; {new Date().getFullYear()} Verto.
         </p>
 
-        <a
-          href={waSupportUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-gray-500 transition-colors duration-150 hover:text-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded"
+        <Link
+          href={supportHref}
+          className="inline-flex items-center min-h-11 px-1 text-sm text-gray-600 dark:text-neutral-400 transition-colors duration-150 hover:text-orange-600 dark:hover:text-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 rounded"
         >
           Need help? Contact Support
-        </a>
+        </Link>
       </div>
     </footer>
   )

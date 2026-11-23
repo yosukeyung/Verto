@@ -7,6 +7,7 @@ import { TagSelector } from '@/components/dashboard/TagSelector'
 import { TagSettingsForm } from '@/components/dashboard/TagSettingsForm'
 import { Card } from '@/components/ui/Card'
 import { Navbar } from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
 import { ProfileModal } from '@/components/ui/ProfileModal'
 import { ThemeSwitch } from '@/components/ui/ThemeSwitch'
 import { DashboardTutorial } from '@/components/dashboard/DashboardTutorial'
@@ -128,6 +129,8 @@ function DashboardContent({
           </>
         ) : null}
       </main>
+
+      <Footer supportHref="/support?from=%2Fdashboard" />
     </div>
   )
 }
