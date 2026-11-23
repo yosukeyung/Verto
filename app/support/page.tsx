@@ -22,12 +22,10 @@ export default async function SupportPage({
 
   try {
     const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const { data, error } = await supabase.auth.getUser()
 
-    if (user?.email) {
-      initialEmail = user.email
+    if (!error && data?.user?.email) {
+      initialEmail = data.user.email
     }
   } catch {
     // Public support page remains usable when unauthenticated

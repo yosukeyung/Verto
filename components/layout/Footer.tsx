@@ -11,16 +11,16 @@ export function Footer({
 }: FooterProps) {
   return (
     <footer
-      className={`w-full border-t border-gray-100 bg-white dark:border-neutral-800 dark:bg-black py-6 transition-colors duration-150 ${className}`}
+      className={`w-full border-t border-gray-100 bg-white dark:border-neutral-800 dark:bg-black py-3 sm:py-4 transition-colors duration-150 ${className}`}
     >
-      <div className="mx-auto flex max-w-2xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
-        <p className="text-sm text-gray-600 dark:text-neutral-400">
+      <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 text-xs">
+        <p className="shrink-0 whitespace-nowrap text-gray-600 dark:text-neutral-400">
           &copy; {new Date().getFullYear()} Verto.
         </p>
 
         <Link
           href={supportHref}
-          className="inline-flex items-center min-h-11 px-1 text-sm text-gray-600 dark:text-neutral-400 transition-colors duration-150 hover:text-orange-600 dark:hover:text-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 rounded"
+          className="relative inline-flex items-center whitespace-nowrap py-1.5 text-right text-gray-600 dark:text-neutral-400 transition-colors duration-150 hover:text-orange-600 dark:hover:text-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 rounded before:absolute before:-inset-y-2 before:-inset-x-1"
         >
           Need help? Contact Support
         </Link>

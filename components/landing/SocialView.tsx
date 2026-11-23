@@ -131,19 +131,19 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
       className={`flex flex-col justify-between transition-colors duration-150 ${
         isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
       } ${
-        isPreview ? 'pt-10 pb-6 px-4' : 'min-h-dvh px-4 py-6 sm:py-12'
+        isPreview ? 'pt-10 pb-6 px-4' : 'h-dvh overflow-hidden overscroll-none px-4 py-5 sm:py-10'
       } ${className || ''} ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
       style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
     >
-      <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center text-center">
+      <div className="w-full max-w-[400px] mx-auto flex-1 min-h-0 flex flex-col justify-center text-center">
         {/* Personal Profile Header */}
-        <div className="mb-5 sm:mb-8">
+        <div className="mb-4 sm:mb-8">
           <AvatarWithLightbox
             src={avatarSrc}
             alt={`${displayName} avatar`}
             isCustom={isCustomAvatar}
             interactive={!isPreview}
-            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 mx-auto mb-3 sm:mb-4 overflow-hidden flex items-center justify-center ${
+            className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 mx-auto mb-2.5 sm:mb-4 overflow-hidden flex items-center justify-center ${
               isDark ? 'bg-neutral-800' : 'bg-gray-50'
             }`}
             style={{ borderColor: effectiveColor }}
@@ -202,7 +202,7 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
         )}
       </div>
 
-      <footer className="text-center pt-5 sm:pt-8">
+      <footer className="text-center pt-4 sm:pt-8 shrink-0">
         <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
           Powered by Verto
         </p>

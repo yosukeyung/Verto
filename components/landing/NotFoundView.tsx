@@ -28,8 +28,11 @@ export function NotFoundView() {
   }, [])
 
   return (
-    <main className="min-h-dvh bg-white flex flex-col justify-between px-4 py-10 sm:py-12">
-      <div className="w-full max-w-[400px] mx-auto flex-1 flex flex-col justify-center items-center text-center">
+    <main
+      data-micro-landing="true"
+      className="fixed inset-0 h-dvh w-full overflow-hidden overscroll-none bg-white flex flex-col justify-between px-4 py-6 sm:py-12"
+    >
+      <div className="w-full max-w-[400px] mx-auto flex-1 min-h-0 flex flex-col justify-center items-center text-center">
         <div
           className="w-40 sm:w-44 max-w-full aspect-[1080/564] mx-auto flex items-center justify-center"
           aria-hidden="true"
@@ -56,7 +59,7 @@ export function NotFoundView() {
         </div>
       </div>
 
-      <footer className="text-center pt-8">
+      <footer className="text-center pt-4 sm:pt-8 shrink-0">
         <p className="text-xs text-gray-500 tracking-wide">
           Powered by Verto
         </p>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
@@ -27,6 +27,22 @@ export default function SupportForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    try {
+      const legacyPattern = /support.*(rate|limit|cooldown)/i
+      for (const storage of [window.localStorage, window.sessionStorage]) {
+        for (let i = storage.length - 1; i >= 0; i--) {
+          const key = storage.key(i)
+          if (key && legacyPattern.test(key)) {
+            storage.removeItem(key)
+          }
+        }
+      }
+    } catch {
+      // Ignore storage access errors in restricted contexts
+    }
+  }, [])
 
   const handleBack = () => {
     if (returnTo) {
@@ -99,14 +115,17 @@ export default function SupportForm({
         setError(
           typeof body?.error === 'string' && body.error
             ? body.error
-            : 'Failed to send email. Please try again tomorrow.'
+            : 'Could not send your report right now. Please try again later.'
         )
         return
       }
 
-      setError('Failed to send email. Please try again tomorrow.')
+      setSubmittedEmail(trimmedEmail)
+      setCategory('')
+      setDescription('')
+      setWebsite('')
     } catch {
-      setError('Failed to send email. Please try again tomorrow.')
+      setError('Network error while sending your report. Please try again.')
     } finally {
       setLoading(false)
     }

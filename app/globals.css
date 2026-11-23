@@ -178,6 +178,13 @@
   }
 }
 
+html:has([data-micro-landing]),
+body:has([data-micro-landing]) {
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 @keyframes slide-up {
   from {
     opacity: 0;

@@ -10,6 +10,22 @@ function applyResponseCookies(source: NextResponse, target: NextResponse): NextR
   return target
 }
 
+async function resolveMiddlewareAuth(request: NextRequest) {
+  try {
+    const { supabase, getResponse } = await createMiddlewareClient(request)
+    const { data, error } = await supabase.auth.getUser()
+    return {
+      user: error ? null : data?.user ?? null,
+      supabaseResponse: getResponse(),
+    }
+  } catch {
+    return {
+      user: null,
+      supabaseResponse: NextResponse.next({ request }),
+    }
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
@@ -64,8 +80,7 @@ export async function proxy(request: NextRequest) {
       }
 
       // Check caller session via cookie-aware middleware client (never cookie-less service client).
-      const { supabase: authSupabase, supabaseResponse } = await createMiddlewareClient(request)
-      const { data: { user } } = await authSupabase.auth.getUser()
+      const { user, supabaseResponse } = await resolveMiddlewareAuth(request)
 
       const redirectUrl = user
         ? new URL(`/dashboard/claim?tag_id=${encodeURIComponent(tagId)}`, request.url)
@@ -80,8 +95,7 @@ export async function proxy(request: NextRequest) {
 
   // ─── Session refresh for all other routes ─────────────────────────────────
   // Required by @supabase/ssr to keep session tokens fresh on every request.
-  const { supabase, supabaseResponse } = await createMiddlewareClient(request)
-  const { data: { user } } = await supabase.auth.getUser()
+  const { user, supabaseResponse } = await resolveMiddlewareAuth(request)
 
   // ─── /register — invite-only guard ────────────────────────────────────────
   // Accessing /register without a valid tag_id param redirects to landing page.

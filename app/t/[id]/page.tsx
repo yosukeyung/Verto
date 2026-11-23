@@ -72,7 +72,8 @@ export default async function TagPage({ params }: TagPageProps) {
 
   return (
     <div
-      className={`min-h-dvh transition-colors duration-200 ${
+      data-micro-landing="true"
+      className={`fixed inset-0 h-dvh w-full overflow-hidden overscroll-none transition-colors duration-200 ${
         isDark ? 'dark bg-neutral-900 text-white' : 'bg-white text-gray-900'
       }`}
     >

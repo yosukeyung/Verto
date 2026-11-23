@@ -59,16 +59,16 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
       className={`flex flex-col justify-between transition-colors duration-150 ${
         isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
       } ${
-        isPreview ? '' : 'min-h-dvh'
+        isPreview ? '' : 'h-dvh overflow-hidden overscroll-none'
       } ${className || ''} ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
       style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
     >
       {/* Top Edge-to-Edge Editorial Banner */}
-      <div className="w-full flex-1 flex flex-col">
+      <div className="w-full flex-1 min-h-0 flex flex-col">
         <header
           className={`w-full ${
             isDark ? accent.bannerGradientDark : accent.bannerGradientLight
-          } ${isPreview ? 'pt-12 pb-6' : 'pt-8 pb-5 sm:pt-14 sm:pb-8'}`}
+          } ${isPreview ? 'pt-12 pb-6' : 'pt-7 pb-4 sm:pt-14 sm:pb-8'}`}
         >
           <div className="w-full max-w-[400px] mx-auto px-4 grid grid-cols-12 items-end gap-3">
             <div className="col-span-8 text-left min-w-0">
@@ -128,7 +128,7 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
         )}
       </div>
 
-      <footer className={`text-center px-4 ${isPreview ? 'pt-6 pb-5' : 'pt-5 pb-6 sm:pt-8 sm:pb-10'}`}>
+      <footer className={`text-center px-4 shrink-0 ${isPreview ? 'pt-6 pb-5' : 'pt-4 pb-5 sm:pt-8 sm:pb-10'}`}>
         <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
           Powered by Verto
         </p>

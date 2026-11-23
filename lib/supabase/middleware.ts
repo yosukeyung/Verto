@@ -31,5 +31,5 @@ export async function createMiddlewareClient(request: NextRequest) {
     }
   )
 
-  return { supabase, supabaseResponse }
+  return { supabase, supabaseResponse, getResponse: () => supabaseResponse }
 }
