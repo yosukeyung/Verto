@@ -1,12 +1,20 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { getClientIpFromHeaders } from '@/lib/client-ip'
+import { consumeActionRateLimit } from '@/lib/action-rate-limit'
 import { isReservedTagId, normalizeTagId } from '@/lib/tag-id'
 import { sanitizeTagLabel, TAG_LABEL_MAX_LENGTH } from '@/lib/tag-label'
 
 const AVATAR_IDS = ['love', 'eat', 'sleep', 'angry', 'cry', 'study'] as const
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const MIN_PASSWORD_LENGTH = 8
+const REGISTER_WINDOW_MS = 15 * 60 * 1000
+const REGISTER_MAX_ATTEMPTS = 5
+const GENERIC_REGISTRATION_ERROR =
+  'Unable to complete registration. Please check your details or sign in if you already have an account.'
 
 export interface RegisterWithTagInput {
   tagId: string
@@ -62,8 +70,31 @@ export async function registerWithTag(
   }
 
   const password = input.password
-  if (password.length < 6) {
-    return { error: 'Password must be at least 6 characters.' }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return {
+      error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`,
+    }
+  }
+
+  const requestHeaders = await headers()
+  const clientIp = getClientIpFromHeaders(requestHeaders)
+  const { allowed } = consumeActionRateLimit([
+    {
+      key: `register:ip:${clientIp}`,
+      windowMs: REGISTER_WINDOW_MS,
+      maxRequests: REGISTER_MAX_ATTEMPTS,
+    },
+    {
+      key: `register:tag:${cleanTagId}`,
+      windowMs: REGISTER_WINDOW_MS,
+      maxRequests: REGISTER_MAX_ATTEMPTS,
+    },
+  ])
+
+  if (!allowed) {
+    return {
+      error: 'Too many registration attempts. Please wait 15 minutes and try again.',
+    }
   }
 
   const supabase = await createClient()
@@ -91,11 +122,12 @@ export async function registerWithTag(
   }
 
   if (!tag || tag.owner_id !== null || isReservedTagId(tag.tag_id)) {
-    return { error: 'This tag is unavailable for registration.' }
+    return { error: GENERIC_REGISTRATION_ERROR }
   }
 
   const randomAvatarId = AVATAR_IDS[Math.floor(Math.random() * AVATAR_IDS.length)]
 
+  // Instant onboarding intentionally confirms email on tag-gated signup until Custom SMTP / verified Resend domain is configured
   const { data: createData, error: createError } =
     await serviceClient.auth.admin.createUser({
       email: cleanEmail,
@@ -109,20 +141,8 @@ export async function registerWithTag(
 
   const createdUser = createData?.user
   if (createError || !createdUser) {
-    const errMsg = createError?.message?.toLowerCase() ?? ''
-    if (
-      createError?.code === 'email_exists' ||
-      errMsg.includes('already been registered') ||
-      errMsg.includes('already exists') ||
-      errMsg.includes('duplicate')
-    ) {
-      return {
-        error: 'An account with this email already exists. Please sign in instead.',
-      }
-    }
-
-    console.error('[registerWithTag] createUser error:', createError)
-    return { error: 'Failed to create account. Please try again.' }
+    console.error('[registerWithTag] createUser error:', createError?.code ?? 'unknown')
+    return { error: GENERIC_REGISTRATION_ERROR }
   }
 
   // Atomically claim the tag only if still unclaimed
@@ -151,7 +171,7 @@ export async function registerWithTag(
       console.error('[registerWithTag] user rollback error:', rollbackError)
     }
 
-    return { error: 'This tag is unavailable or has already been claimed.' }
+    return { error: GENERIC_REGISTRATION_ERROR }
   }
 
   // Establish session cookie on the server

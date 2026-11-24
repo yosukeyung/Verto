@@ -19,6 +19,23 @@ export type ActiveMode = 'social' | 'lost_and_found' | 'event_hub'
 export type ThemeFont = 'sans' | 'serif' | 'mono'
 export type ThemeColor = 'orange' | 'black' | 'emerald' | 'blue'
 export type PageTheme = 'light' | 'dark'
+export type LightBackgroundStyle =
+  | 'pure_white'
+  | 'warm_ivory_mist'
+  | 'cool_frost_breeze'
+  | 'soft_blush_linen'
+export type DarkBackgroundStyle =
+  | 'pitch_charcoal'
+  | 'midnight_indigo'
+  | 'deep_pine_shadow'
+  | 'warm_espresso'
+export type BackgroundStyle = LightBackgroundStyle | DarkBackgroundStyle
+export type BackgroundPattern =
+  | 'none'
+  | 'circuit_board'
+  | 'topography'
+  | 'stripes'
+  | 'i_like_food'
 
 // ─── Metadata shapes (stored in tags.metadata JSONB) ─────────────────────────
 
@@ -32,6 +49,8 @@ export interface SocialMetadata {
   theme_color?: ThemeColor
   page_theme?: PageTheme
   pageTheme?: PageTheme
+  background_style?: BackgroundStyle
+  background_pattern?: BackgroundPattern
 }
 
 export interface LostAndFoundMetadata {
@@ -44,6 +63,8 @@ export interface LostAndFoundMetadata {
   theme_color?: ThemeColor
   page_theme?: PageTheme
   pageTheme?: PageTheme
+  background_style?: BackgroundStyle
+  background_pattern?: BackgroundPattern
 }
 
 export interface EventHubMetadata {
@@ -62,6 +83,8 @@ export interface EventHubMetadata {
   theme_color?: ThemeColor
   page_theme?: PageTheme
   pageTheme?: PageTheme
+  background_style?: BackgroundStyle
+  background_pattern?: BackgroundPattern
 }
 
 export type TagMetadata = Record<string, any>

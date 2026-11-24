@@ -1,9 +1,25 @@
 import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { getClientIpFromHeaders } from '@/lib/client-ip'
+import { consumeActionRateLimit } from '@/lib/action-rate-limit'
+import { isTrustedRequestOrigin } from '@/lib/request-origin'
 import { isValidTagId } from '@/lib/tag-id'
 
+const UNCLAIM_USER_WINDOW_MS = 60 * 60 * 1000
+const UNCLAIM_USER_MAX = 3
+const UNCLAIM_IP_WINDOW_MS = 60 * 60 * 1000
+const UNCLAIM_IP_MAX = 5
+const UNCLAIM_TAG_COOLDOWN_MS = 15 * 60 * 1000
+
 export async function POST(request: Request) {
+  if (!isTrustedRequestOrigin(request)) {
+    return NextResponse.json(
+      { error: 'Forbidden request origin.' },
+      { status: 403 }
+    )
+  }
+
   const supabase = await createClient()
   const {
     data: { user },
@@ -25,6 +41,35 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Invalid tag_id.' },
         { status: 400 }
+      )
+    }
+
+    const clientIp = getClientIpFromHeaders(request.headers)
+    const { allowed, retryAfterSec } = consumeActionRateLimit([
+      {
+        key: `unclaim:user:${user.id}`,
+        windowMs: UNCLAIM_USER_WINDOW_MS,
+        maxRequests: UNCLAIM_USER_MAX,
+      },
+      {
+        key: `unclaim:ip:${clientIp}`,
+        windowMs: UNCLAIM_IP_WINDOW_MS,
+        maxRequests: UNCLAIM_IP_MAX,
+      },
+      {
+        key: `unclaim:tag:${tag_id}`,
+        windowMs: UNCLAIM_TAG_COOLDOWN_MS,
+        maxRequests: 1,
+      },
+    ])
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many unclaim requests. Please wait before trying again.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSec) },
+        }
       )
     }
 

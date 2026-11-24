@@ -11,11 +11,13 @@ import {
   sanitizeProfileAvatarId,
 } from '@/lib/url-validation'
 import { AvatarWithLightbox } from '@/components/ui/AvatarWithLightbox'
+import { TagBackground } from '@/components/landing/TagBackground'
 
 export interface LostFoundViewProps {
   metadata: Partial<LostAndFoundMetadata> & Record<string, any>
   avatarId?: string | null
   avatarUrl?: string | null
+  expectedUserId?: string
   className?: string
   isPreview?: boolean
 }
@@ -27,6 +29,7 @@ export function LostFoundView({
   metadata,
   avatarId,
   avatarUrl,
+  expectedUserId,
   className,
   isPreview = false,
 }: LostFoundViewProps) {
@@ -40,12 +43,16 @@ export function LostFoundView({
   const rawCustomMessage = metadata.custom_message ?? metadata.customMessage ?? ''
   const rawWaNumber = metadata.wa_number ?? metadata.waNumber ?? ''
 
-  const { fontClass, accent, isDark } = resolveTagTheme(metadata)
+  const { fontClass, accent, isDark, background } = resolveTagTheme(metadata)
   const effectiveColor = accent.hex
 
+  const avatarValidationOpts = {
+    allowBlob: isPreview,
+    expectedUserId: isPreview ? undefined : expectedUserId,
+  }
   const displayItemName = String(rawItemName).trim() || (isPreview ? 'Motorcycle Keys' : 'Lost Item')
   const itemPhotoUrl =
-    sanitizeAvatarStorageUrl(rawItemPhotoUrl, { allowBlob: isPreview }) ?? ''
+    sanitizeAvatarStorageUrl(rawItemPhotoUrl, avatarValidationOpts) ?? ''
   const hasItemPhoto = itemPhotoUrl.length > 0
 
   const displayOwnerName = String(rawOwnerName).trim() || (isPreview ? 'Owner Name' : 'Owner')
@@ -53,10 +60,10 @@ export function LostFoundView({
   const displayMessage = trimmedMessage.length > 0 ? trimmedMessage : DEFAULT_SUBHEADLINE
 
   const validatedOwnerAvatar =
-    sanitizeProfileAvatarId(avatarId, { allowBlob: isPreview }) ??
-    sanitizeAvatarStorageUrl(avatarUrl, { allowBlob: isPreview }) ??
-    sanitizeProfileAvatarId(metadata.avatar_id, { allowBlob: isPreview }) ??
-    sanitizeAvatarStorageUrl(metadata.avatar_url, { allowBlob: isPreview }) ??
+    sanitizeProfileAvatarId(avatarId, avatarValidationOpts) ??
+    sanitizeAvatarStorageUrl(avatarUrl, avatarValidationOpts) ??
+    sanitizeProfileAvatarId(metadata.avatar_id, avatarValidationOpts) ??
+    sanitizeAvatarStorageUrl(metadata.avatar_url, avatarValidationOpts) ??
     'love'
   const resolvedAvatarSrc = getAvatarSrc(validatedOwnerAvatar, { allowBlob: isPreview })
   const isCustomAvatar = isCustomAvatarUrl(resolvedAvatarSrc, { allowBlob: isPreview })
@@ -71,12 +78,25 @@ export function LostFoundView({
 
   return (
     <main
-      className={`flex flex-col justify-between transition-colors duration-150 ${isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
-        } ${isPreview ? 'pt-10 pb-6 px-4 select-none' : 'h-dvh overflow-hidden overscroll-none px-4 py-5 sm:py-10'
+      className={`relative isolate w-full flex flex-col justify-between transition-colors duration-150 ${isDark ? 'text-white' : 'text-gray-900'
+        } ${isPreview
+          ? 'min-h-full pt-10 pb-6 px-4 select-none'
+          : 'h-dvh overflow-hidden overscroll-none px-4 py-5 sm:py-10'
         } ${className || ''} ${fontClass}`}
-      style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
+      style={
+        {
+          '--theme-accent': effectiveColor,
+          '--tag-card-bg': background.cardBg,
+          '--tag-card-border': background.cardBorder,
+          '--tag-btn-bg': background.buttonBg,
+          '--tag-btn-bg-hover': background.buttonHoverBg,
+          '--tag-btn-border': background.buttonBorder,
+        } as React.CSSProperties
+      }
     >
-      <div className="w-full max-w-[400px] mx-auto flex-1 min-h-0 flex flex-col justify-center text-center">
+      <TagBackground background={background} />
+
+      <div className="relative z-10 w-full max-w-[400px] mx-auto flex-1 min-h-0 flex flex-col justify-center text-center">
         {/* Top Accent Shield Icon */}
         <div
           className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border flex items-center justify-center mx-auto mb-2.5 sm:mb-4"
@@ -107,16 +127,13 @@ export function LostFoundView({
 
         {/* Structured Info Card */}
         <div
-          className={`mt-4 sm:mt-6 rounded-xl border p-3.5 sm:p-4 text-left space-y-2.5 sm:space-y-3 ${isDark
-              ? 'bg-neutral-950/60 border-neutral-800'
-              : 'bg-gray-50/50 border-gray-200'
-            }`}
+          className="mt-4 sm:mt-6 rounded-xl border p-3.5 sm:p-4 text-left space-y-2.5 sm:space-y-3 backdrop-blur-[6px] border-[var(--tag-card-border)] bg-[var(--tag-card-bg)] shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
         >
           {/* ITEM Section (Conditional Dropdown only when item photo exists) */}
           <div className="min-w-0">
             <div className="flex items-center justify-between gap-3">
               <p
-                className={`text-[10px] font-medium tracking-wider uppercase ${isDark ? 'text-neutral-400' : 'text-gray-500'
+                className={`text-[10px] font-medium tracking-wider uppercase ${isDark ? 'text-neutral-400' : 'text-gray-600'
                   }`}
               >
                 ITEM
@@ -129,9 +146,9 @@ export function LostFoundView({
                   aria-expanded={isItemOpen}
                   aria-controls="lost-found-item-details"
                   aria-label={isItemOpen ? 'Hide item photo' : 'Show item photo'}
-                  className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer before:absolute before:-inset-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 ${isDark
-                      ? 'border-neutral-700 bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white focus-visible:outline-white'
-                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-gray-900'
+                  className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer before:absolute before:-inset-1.5 border-[var(--tag-btn-border)] bg-[var(--tag-btn-bg)] hover:bg-[var(--tag-btn-bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 ${isDark
+                      ? 'text-neutral-200 hover:text-white focus-visible:outline-white'
+                      : 'text-gray-700 hover:text-gray-900 focus-visible:outline-gray-900'
                     }`}
                 >
                   <ChevronDown
@@ -173,7 +190,7 @@ export function LostFoundView({
                       </p>
                       {!isPreview && (
                         <p
-                          className={`text-[11px] mt-0.5 ${isDark ? 'text-neutral-400' : 'text-gray-500'
+                          className={`text-[11px] mt-0.5 ${isDark ? 'text-neutral-400' : 'text-gray-600'
                             }`}
                         >
                           Tap photo to enlarge
@@ -205,7 +222,7 @@ export function LostFoundView({
           >
             <div className="flex items-center justify-between gap-3">
               <p
-                className={`text-[10px] font-medium tracking-wider uppercase ${isDark ? 'text-neutral-400' : 'text-gray-500'
+                className={`text-[10px] font-medium tracking-wider uppercase ${isDark ? 'text-neutral-400' : 'text-gray-600'
                   }`}
               >
                 OWNER
@@ -217,9 +234,9 @@ export function LostFoundView({
                 aria-expanded={isOwnerOpen}
                 aria-controls="lost-found-owner-details"
                 aria-label={isOwnerOpen ? 'Hide owner details' : 'Show owner details'}
-                className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer before:absolute before:-inset-1.5 focus-visible:outline-2 focus-visible:outline-offset-2 ${isDark
-                    ? 'border-neutral-700 bg-neutral-900 text-neutral-300 hover:bg-neutral-800 hover:text-white focus-visible:outline-white'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-gray-900'
+                className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 transition-colors duration-150 cursor-pointer before:absolute before:-inset-1.5 border-[var(--tag-btn-border)] bg-[var(--tag-btn-bg)] hover:bg-[var(--tag-btn-bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 ${isDark
+                    ? 'text-neutral-200 hover:text-white focus-visible:outline-white'
+                    : 'text-gray-700 hover:text-gray-900 focus-visible:outline-gray-900'
                   }`}
               >
                 <ChevronDown
@@ -260,7 +277,7 @@ export function LostFoundView({
                         {displayOwnerName}
                       </p>
                       <p
-                        className={`text-xs font-mono break-all mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-500'
+                        className={`text-xs font-mono break-all mt-0.5 ${isDark ? 'text-gray-400' : 'text-gray-600'
                           }`}
                       >
                         {displayWaNumber}
@@ -316,8 +333,8 @@ export function LostFoundView({
         </div>
       </div>
 
-      <footer className="text-center pt-4 sm:pt-8 shrink-0">
-        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
+      <footer className="relative z-10 text-center pt-4 sm:pt-8 shrink-0">
+        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-600'}`}>
           Powered by Verto
         </p>
       </footer>

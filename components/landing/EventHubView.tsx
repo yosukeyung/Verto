@@ -3,6 +3,7 @@ import { ExternalLink } from 'lucide-react'
 import type { EventHubMetadata } from '@/types/database'
 import { resolveTagTheme } from '@/lib/tag-theme'
 import { sanitizeHttpsUrl } from '@/lib/url-validation'
+import { TagBackground } from '@/components/landing/TagBackground'
 
 export interface EventHubViewProps {
   metadata: Partial<EventHubMetadata> & Record<string, any>
@@ -24,7 +25,7 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
   const rawDescription = metadata.description ?? metadata.eventDescription ?? ''
   const { link_1, link_2, link_3 } = metadata
 
-  const { fontClass, accent, isDark } = resolveTagTheme(metadata)
+  const { fontClass, accent, isDark, background } = resolveTagTheme(metadata)
   const effectiveColor = accent.hex
 
   const displayTitle =
@@ -56,15 +57,24 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
 
   return (
     <main
-      className={`flex flex-col justify-between transition-colors duration-150 ${
-        isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
+      className={`relative isolate w-full flex flex-col justify-between transition-colors duration-150 ${
+        isDark ? 'text-white' : 'text-gray-900'
       } ${
-        isPreview ? '' : 'h-dvh overflow-hidden overscroll-none'
+        isPreview ? 'min-h-full' : 'h-dvh overflow-hidden overscroll-none'
       } ${className || ''} ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
-      style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
+      style={
+        {
+          '--theme-accent': effectiveColor,
+          '--tag-btn-bg': background.buttonBg,
+          '--tag-btn-bg-hover': background.buttonHoverBg,
+          '--tag-btn-border': background.buttonBorder,
+        } as React.CSSProperties
+      }
     >
+      <TagBackground background={background} />
+
       {/* Top Edge-to-Edge Editorial Banner */}
-      <div className="w-full flex-1 min-h-0 flex flex-col">
+      <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col">
         <header
           className={`w-full ${
             isDark ? accent.bannerGradientDark : accent.bannerGradientLight
@@ -108,16 +118,16 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
                   href={fullUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`w-full h-11 px-4 sm:px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                  className={`w-full h-11 px-4 sm:px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between backdrop-blur-[6px] shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-[var(--tag-btn-border)] bg-[var(--tag-btn-bg)] hover:bg-[var(--tag-btn-bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 ${
                     isDark
-                      ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800 focus-visible:outline-white'
-                      : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-gray-900'
+                      ? 'text-white focus-visible:outline-white'
+                      : 'text-gray-900 focus-visible:outline-gray-900'
                   }`}
                 >
                   <span className="truncate">{label}</span>
                   <ExternalLink
                     className={`w-4 h-4 shrink-0 ml-2 ${
-                      isDark ? 'text-neutral-400' : 'text-gray-500'
+                      isDark ? 'text-neutral-300' : 'text-gray-600'
                     }`}
                     strokeWidth={1.75}
                   />
@@ -128,8 +138,8 @@ export function EventHubView({ metadata, className, isPreview = false }: EventHu
         )}
       </div>
 
-      <footer className={`text-center px-4 shrink-0 ${isPreview ? 'pt-6 pb-5' : 'pt-4 pb-5 sm:pt-8 sm:pb-10'}`}>
-        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
+      <footer className={`relative z-10 text-center px-4 shrink-0 ${isPreview ? 'pt-6 pb-5' : 'pt-4 pb-5 sm:pt-8 sm:pb-10'}`}>
+        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-600'}`}>
           Powered by Verto
         </p>
       </footer>

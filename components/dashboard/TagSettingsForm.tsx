@@ -14,6 +14,14 @@ import { Input } from '@/components/ui/Input'
 import { saveTagSettings } from '@/app/dashboard/actions'
 import { createClient } from '@/lib/supabase/client'
 import { sanitizeTagLabel, TAG_LABEL_MAX_LENGTH } from '@/lib/tag-label'
+import {
+  BG_PATTERN_OPTIONS,
+  getBackgroundStyleOptions,
+  mapBackgroundStyleForTheme,
+  resolveTagTheme,
+  sanitizeBackgroundPattern,
+  sanitizeBackgroundStyle,
+} from '@/lib/tag-theme'
 
 interface TagSettingsFormProps {
   activeTag: TagRow
@@ -53,17 +61,31 @@ export function TagSettingsForm({
   const initialMetadata = useMemo(() => {
     const raw = (activeTag.metadata as Record<string, any>) || {}
     const pageTheme = (raw.page_theme || raw.pageTheme || 'light') as PageTheme
+    const isInitialDark = pageTheme === 'dark'
     const themeColor: ThemeColor = raw.theme_color === 'black' ? 'orange' : (raw.theme_color || 'orange')
+    const backgroundStyle = sanitizeBackgroundStyle(
+      raw.background_style ?? raw.bg_preset,
+      isInitialDark
+    )
+    const backgroundPattern = sanitizeBackgroundPattern(
+      raw.background_pattern ?? raw.bg_pattern
+    )
     const base: Record<string, any> = {
       theme_font: 'sans' as ThemeFont,
       theme_color: themeColor,
       page_theme: pageTheme,
       pageTheme: pageTheme,
+      background_style: backgroundStyle,
+      background_pattern: backgroundPattern,
       ...raw,
     }
+    delete base.bg_preset
+    delete base.bg_pattern
     base.theme_color = themeColor
     base.page_theme = pageTheme
     base.pageTheme = pageTheme
+    base.background_style = backgroundStyle
+    base.background_pattern = backgroundPattern
 
     if (initialMode === 'social' && !raw.name && profileFullName) {
       base.name = profileFullName
@@ -78,14 +100,19 @@ export function TagSettingsForm({
   const [metadata, setMetadata] = useState<Record<string, any>>(initialMetadata)
   const [stagedItemPhotoBlob, setStagedItemPhotoBlob] = useState<Blob | null>(null)
   const [stagedItemPhotoPreviewUrl, setStagedItemPhotoPreviewUrl] = useState<string | null>(null)
-  const [activeThemeTab, setActiveThemeTab] = useState<'typography' | 'color'>('typography')
+  const [activeThemeTab, setActiveThemeTab] = useState<'typography' | 'color' | 'background'>('typography')
   const [isSaving, setIsSaving] = useState(false)
-  const [toast, setToast] = useState<{ type: ToastType; message: React.ReactNode } | null>(null)
+  const [toast, setToast] = useState<{
+    type: ToastType
+    message: React.ReactNode
+    showLivePageLink?: boolean
+  } | null>(null)
   const [mounted, setMounted] = useState(false)
   const [showUnsavedModal, setShowUnsavedModal] = useState(false)
   const [modalError, setModalError] = useState<string | null>(null)
 
   const livePageUrl = `/t/${activeTag.tag_id}`
+  const previewTheme = useMemo(() => resolveTagTheme(metadata), [metadata])
 
   useEffect(() => {
     setMounted(true)
@@ -132,13 +159,31 @@ export function TagSettingsForm({
     const initialTheme = initialMetadata.page_theme || initialMetadata.pageTheme || 'light'
     if (currentTheme !== initialTheme) return true
 
+    if (
+      sanitizeBackgroundStyle(metadata.background_style, currentTheme === 'dark') !==
+      sanitizeBackgroundStyle(initialMetadata.background_style, initialTheme === 'dark')
+    ) {
+      return true
+    }
+
+    if (
+      sanitizeBackgroundPattern(metadata.background_pattern) !==
+      sanitizeBackgroundPattern(initialMetadata.background_pattern)
+    ) {
+      return true
+    }
+
     const allKeys = Array.from(new Set([...Object.keys(initialMetadata), ...Object.keys(metadata)]))
     for (const key of allKeys) {
       if (
         key === 'theme_font' ||
         key === 'theme_color' ||
         key === 'page_theme' ||
-        key === 'pageTheme'
+        key === 'pageTheme' ||
+        key === 'background_style' ||
+        key === 'background_pattern' ||
+        key === 'bg_preset' ||
+        key === 'bg_pattern'
       )
         continue
       const valA = metadata[key] ?? ''
@@ -235,13 +280,18 @@ export function TagSettingsForm({
         resolvedItemPhotoUrl = `${urlData.publicUrl}?t=${Date.now()}`
       }
 
+      const finalIsDark = finalTheme === 'dark'
       const finalMetadata: Record<string, any> = {
         theme_font: 'sans',
         theme_color: 'orange',
         ...metadata,
         page_theme: finalTheme,
         pageTheme: finalTheme,
+        background_style: sanitizeBackgroundStyle(metadata.background_style, finalIsDark),
+        background_pattern: sanitizeBackgroundPattern(metadata.background_pattern),
       }
+      delete finalMetadata.bg_preset
+      delete finalMetadata.bg_pattern
 
       if (activeMode === 'lost_and_found') {
         finalMetadata.item_photo_url = resolvedItemPhotoUrl || null
@@ -278,20 +328,8 @@ export function TagSettingsForm({
 
       setToast({
         type: 'success',
-        message: (
-          <span className="flex items-center gap-1.5 flex-wrap">
-            <span>Tag settings saved successfully.</span>
-            <a
-              href={livePageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-0.5 font-bold text-green-950 dark:text-green-100 underline underline-offset-2 hover:opacity-80 transition-opacity"
-            >
-              <span>View Live Page</span>
-              <span aria-hidden="true">↗</span>
-            </a>
-          </span>
-        ),
+        message: 'Tag settings saved successfully.',
+        showLivePageLink: true,
       })
       setIsSaving(false)
       return { ok: true }
@@ -489,18 +527,19 @@ export function TagSettingsForm({
               Theme Customization
             </h3>
             <p className="text-xs text-gray-500 dark:text-neutral-400">
-              Select typography, color, and page theme with instant real-time miniature preview.
+              Select typography, color, background, and page theme with instant live preview.
             </p>
           </div>
 
           {/* Upper Middle: Scaled-down Vertical Mobile Preview */}
           <div className="flex flex-col items-center py-2">
             {(() => {
-              const isPreviewDark = (metadata.page_theme || metadata.pageTheme) === 'dark'
+              const isPreviewDark = previewTheme.isDark
               return (
                 <div
-                  className={`relative w-[148px] h-[316px] shrink-0 mx-auto rounded-[24px] border-[4px] border-black dark:border-neutral-700 shadow-lg overflow-hidden transition-colors duration-200 ${isPreviewDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
+                  className={`relative w-[148px] h-[316px] shrink-0 mx-auto rounded-[24px] border-[4px] border-black dark:border-neutral-700 shadow-lg overflow-hidden transition-colors duration-200 ${isPreviewDark ? 'text-white' : 'text-gray-900'
                     }`}
+                  style={{ backgroundColor: previewTheme.background.fallbackColor }}
                 >
                   {/* Mini Dynamic Island */}
                   <div
@@ -561,17 +600,17 @@ export function TagSettingsForm({
             </a>
           </div>
 
-          {/* Lower Middle: Tabbed Controls (Typography & Color) */}
+          {/* Lower Middle: Tabbed Controls (Typography, Color, Background) */}
           <div className="space-y-3">
-            <div className="flex p-0.5 rounded-lg bg-gray-100 border border-gray-200 dark:bg-neutral-900 dark:border-neutral-800" role="tablist">
+            <div className="flex p-1 rounded-xl bg-gray-100 border border-gray-200 dark:bg-neutral-900 dark:border-neutral-800" role="tablist">
               <button
                 type="button"
                 role="tab"
                 aria-selected={activeThemeTab === 'typography'}
                 onClick={() => setActiveThemeTab('typography')}
-                className={`flex-1 py-1.5 px-3 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer ${activeThemeTab === 'typography'
+                className={`flex-1 min-h-10 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${activeThemeTab === 'typography'
                     ? 'bg-white text-gray-900 shadow-xs dark:bg-black dark:text-white'
-                    : 'text-gray-500 hover:text-gray-900 dark:text-neutral-400 dark:hover:text-white'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-neutral-400 dark:hover:text-white'
                   }`}
               >
                 Typography
@@ -581,23 +620,35 @@ export function TagSettingsForm({
                 role="tab"
                 aria-selected={activeThemeTab === 'color'}
                 onClick={() => setActiveThemeTab('color')}
-                className={`flex-1 py-1.5 px-3 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer ${activeThemeTab === 'color'
+                className={`flex-1 min-h-10 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${activeThemeTab === 'color'
                     ? 'bg-white text-gray-900 shadow-xs dark:bg-black dark:text-white'
-                    : 'text-gray-500 hover:text-gray-900 dark:text-neutral-400 dark:hover:text-white'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-neutral-400 dark:hover:text-white'
                   }`}
               >
                 Color
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeThemeTab === 'background'}
+                onClick={() => setActiveThemeTab('background')}
+                className={`flex-1 min-h-10 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${activeThemeTab === 'background'
+                    ? 'bg-white text-gray-900 shadow-xs dark:bg-black dark:text-white'
+                    : 'text-gray-600 hover:text-gray-900 dark:text-neutral-400 dark:hover:text-white'
+                  }`}
+              >
+                Background
+              </button>
             </div>
 
-            {activeThemeTab === 'typography' ? (
+            {activeThemeTab === 'typography' && (
               <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Typography Selector">
                 {FONT_OPTIONS.map((opt) => {
                   const isSelected = (metadata.theme_font || 'sans') === opt.id
                   return (
                     <label
                       key={opt.id}
-                      className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-sm cursor-pointer transition-all duration-150 select-none ${isSelected
+                      className={`min-h-11 flex items-center justify-center gap-2 p-2.5 rounded-lg border text-sm cursor-pointer transition-all duration-150 select-none ${isSelected
                           ? 'border-gray-900 bg-gray-50 text-gray-900 font-semibold ring-1 ring-gray-900 dark:border-white dark:bg-neutral-900 dark:text-white dark:ring-white'
                           : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-900'
                         }`}
@@ -615,8 +666,10 @@ export function TagSettingsForm({
                   )
                 })}
               </div>
-            ) : (
-              <div className="space-y-4 py-1">
+            )}
+
+            {activeThemeTab === 'color' && (
+              <div className="py-1.5">
                 {/* Accent Color Section */}
                 <div>
                   <span className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-2">
@@ -634,7 +687,7 @@ export function TagSettingsForm({
                           aria-checked={isSelected}
                           aria-label={`${c.label} (${c.hex})`}
                           onClick={() => setMetadata({ ...metadata, theme_color: c.id })}
-                          className={`w-9 h-9 rounded-full transition-all duration-150 flex items-center justify-center cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 dark:focus-visible:ring-white dark:ring-offset-black ${isSelected
+                          className={`relative w-9 h-9 rounded-full transition-all duration-150 flex items-center justify-center cursor-pointer before:absolute before:-inset-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-900 dark:focus-visible:ring-white dark:ring-offset-black ${isSelected
                               ? 'ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-105 shadow-sm'
                               : 'hover:scale-105 hover:opacity-90'
                             }`}
@@ -648,16 +701,20 @@ export function TagSettingsForm({
                     })}
                   </div>
                 </div>
+              </div>
+            )}
 
+            {activeThemeTab === 'background' && (
+              <div className="space-y-3 py-0.5">
                 {/* Page Theme Selector */}
-                <div className="pt-3 border-t border-gray-100 dark:border-neutral-800">
+                <div>
                   <span className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-2">
                     Page Theme
                   </span>
                   <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Page Theme Selector">
                     {PAGE_THEME_OPTIONS.map((themeOpt) => {
-                      const isSelected =
-                        (metadata.page_theme || metadata.pageTheme || 'light') === themeOpt.id
+                      const targetIsDark = themeOpt.id === 'dark'
+                      const isSelected = previewTheme.isDark === targetIsDark
                       const IconComponent = themeOpt.icon
                       return (
                         <button
@@ -670,15 +727,127 @@ export function TagSettingsForm({
                               ...metadata,
                               page_theme: themeOpt.id,
                               pageTheme: themeOpt.id,
+                              background_style: mapBackgroundStyleForTheme(
+                                metadata.background_style,
+                                targetIsDark
+                              ),
                             })
                           }
-                          className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all duration-150 select-none ${isSelected
+                          className={`min-h-11 flex items-center justify-center gap-2 p-2.5 rounded-lg border text-xs font-semibold cursor-pointer transition-all duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${isSelected
                               ? 'border-orange-500 bg-orange-50/50 text-orange-600 ring-1 ring-orange-500 dark:border-orange-500 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500'
                               : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-900'
                             }`}
                         >
                           <IconComponent className="w-3.5 h-3.5" />
                           <span>{themeOpt.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Background Style Selector (filtered to 4 active theme options) */}
+                <div className="pt-3 border-t border-gray-100 dark:border-neutral-800">
+                  <span className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-2">
+                    Background Style
+                  </span>
+                  <div
+                    className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+                    role="radiogroup"
+                    aria-label="Background Style Selector"
+                  >
+                    {getBackgroundStyleOptions(previewTheme.isDark).map((styleOpt) => {
+                      const isSelected = previewTheme.backgroundStyle === styleOpt.id
+                      return (
+                        <button
+                          key={styleOpt.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          onClick={() =>
+                            setMetadata({ ...metadata, background_style: styleOpt.id })
+                          }
+                          className={`min-h-11 flex flex-col items-center gap-1.5 p-1.5 rounded-lg border text-[11px] font-semibold cursor-pointer transition-all duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${isSelected
+                              ? 'border-orange-500 bg-orange-50/50 text-orange-600 ring-1 ring-orange-500 dark:border-orange-500 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-900'
+                            }`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="h-8 w-full rounded-md block ring-1 ring-inset ring-black/15 dark:ring-white/20"
+                            style={{
+                              backgroundColor: styleOpt.swatchFallback,
+                              backgroundImage: styleOpt.swatchBackground,
+                            }}
+                          />
+                          <span className="leading-tight w-full text-center">
+                            {styleOpt.label}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Background Pattern Selector */}
+                <div className="pt-3 border-t border-gray-100 dark:border-neutral-800">
+                  <span className="block text-xs font-medium text-gray-500 dark:text-neutral-400 mb-2">
+                    Background Pattern
+                  </span>
+                  <div
+                    className="grid grid-cols-3 sm:grid-cols-5 gap-2"
+                    role="radiogroup"
+                    aria-label="Background Pattern Selector"
+                  >
+                    {BG_PATTERN_OPTIONS.map((pattern) => {
+                      const isSelected = previewTheme.backgroundPattern === pattern.id
+                      return (
+                        <button
+                          key={pattern.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={isSelected}
+                          onClick={() =>
+                            setMetadata({ ...metadata, background_pattern: pattern.id })
+                          }
+                          className={`min-h-11 flex flex-col items-center gap-1.5 p-1.5 rounded-lg border text-[11px] font-semibold cursor-pointer transition-all duration-150 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 ${isSelected
+                              ? 'border-orange-500 bg-orange-50/50 text-orange-600 ring-1 ring-orange-500 dark:border-orange-500 dark:bg-orange-500/10 dark:text-orange-400 dark:ring-orange-500'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-900'
+                            }`}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="relative h-8 w-full rounded-md overflow-hidden block ring-1 ring-inset ring-black/15 dark:ring-white/20"
+                            style={{
+                              backgroundColor: previewTheme.background.swatchFallback,
+                              backgroundImage: previewTheme.background.swatchBackground,
+                            }}
+                          >
+                            {pattern.src ? (
+                              <span
+                                className="absolute inset-0 block"
+                                style={{
+                                  backgroundColor: previewTheme.background.patternColor,
+                                  opacity: previewTheme.isDark ? 0.62 : 0.55,
+                                  maskImage: `url('${pattern.src}')`,
+                                  WebkitMaskImage: `url('${pattern.src}')`,
+                                  maskRepeat: 'repeat',
+                                  WebkitMaskRepeat: 'repeat',
+                                  maskSize: pattern.swatchTileSize,
+                                  WebkitMaskSize: pattern.swatchTileSize,
+                                  maskPosition: 'center center',
+                                  WebkitMaskPosition: 'center center',
+                                }}
+                              />
+                            ) : (
+                              <span className="absolute inset-0 flex items-center justify-center">
+                                <span className="w-5 h-px bg-gray-500/80 dark:bg-neutral-400/80 -rotate-12 block" />
+                              </span>
+                            )}
+                          </span>
+                          <span className="leading-tight w-full text-center">
+                            {pattern.label}
+                          </span>
                         </button>
                       )
                     })}
@@ -693,7 +862,25 @@ export function TagSettingsForm({
         {toast && (
           <Toast
             type={toast.type}
-            message={toast.message}
+            message={
+              toast.showLivePageLink ? (
+                <span className="flex items-center gap-1.5 flex-wrap">
+                  <span>{toast.message}</span>
+                  <a
+                    href={livePageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleOpenLivePageClick}
+                    className="inline-flex items-center gap-0.5 font-bold text-green-950 dark:text-green-100 underline underline-offset-2 hover:opacity-80 transition-opacity rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-900 dark:focus-visible:outline-green-100"
+                  >
+                    <span>View Live Page</span>
+                    <span aria-hidden="true">↗</span>
+                  </a>
+                </span>
+              ) : (
+                toast.message
+              )
+            }
             onClose={() => setToast(null)}
           />
         )}

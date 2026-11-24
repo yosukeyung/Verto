@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
@@ -8,26 +9,50 @@ import {
 } from '@/lib/support'
 import {
   SUPPORT_DEVICE_COOKIE_NAME,
-  isValidSupportDeviceId,
-  peekSupportRateLimit,
-  recordSupportRateLimit,
+  releaseSupportRateLimit,
+  reserveSupportRateLimit,
   resolveRateLimitKeys,
+  signSupportDeviceId,
+  verifySignedSupportDeviceCookie,
 } from '@/lib/support-rate-limit'
 
 const MAX_BODY_BYTES = 16_384
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const IP_REGEX = /^[0-9a-fA-F:.]{2,45}$/
 const DEFAULT_RESEND_FROM = 'Verto Support <onboarding@resend.dev>'
 const RATE_LIMIT_ERROR_MESSAGE =
   'You have reached the limit of 2 reports per 5 hours. Please try again later. (Batas 2 laporan per 5 jam tercapai, silakan coba lagi nanti.)'
 
+function sanitizeIpToken(raw: string | undefined): string | null {
+  if (!raw) return null
+  const trimmed = raw.trim()
+  return IP_REGEX.test(trimmed) ? trimmed : null
+}
+
 function getClientIp(request: Request): string {
+  const vercelForwarded = request.headers.get('x-vercel-forwarded-for')
+  if (vercelForwarded) {
+    for (const part of vercelForwarded.split(',')) {
+      const ip = sanitizeIpToken(part)
+      if (ip) return ip
+    }
+  }
+
+  const realIp = sanitizeIpToken(request.headers.get('x-real-ip') ?? undefined)
+  if (realIp) {
+    return realIp
+  }
+
+  // Rightmost valid entry in x-forwarded-for avoids trusting client-prepended hops
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
-    const firstIp = forwarded.split(',')[0]?.trim()
-    if (firstIp) return firstIp
+    const parts = forwarded.split(',')
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const ip = sanitizeIpToken(parts[i])
+      if (ip) return ip
+    }
   }
-  const realIp = request.headers.get('x-real-ip')?.trim()
-  if (realIp) return realIp
+
   return 'unknown'
 }
 
@@ -148,21 +173,20 @@ export async function POST(request: NextRequest) {
 
   const userId = await resolveOptionalUserId()
   const rawDeviceCookie = request.cookies.get(SUPPORT_DEVICE_COOKIE_NAME)?.value
-  const existingDeviceId = isValidSupportDeviceId(rawDeviceCookie)
-    ? rawDeviceCookie
-    : null
-  const deviceId = existingDeviceId ?? globalThis.crypto.randomUUID()
+  const verifiedDeviceId = verifySignedSupportDeviceCookie(rawDeviceCookie)
+  const deviceId = verifiedDeviceId ?? randomUUID()
   const clientIp = getClientIp(request)
 
-  const { checkKeys, recordKeys } = resolveRateLimitKeys({
+  const rateLimitKeys = resolveRateLimitKeys({
     userId,
-    existingDeviceId,
+    verifiedDeviceId,
     deviceId,
     clientIp,
   })
 
-  const { allowed, retryAfterSec } = peekSupportRateLimit(checkKeys)
-  if (!allowed) {
+  const { allowed, retryAfterSec, reservationToken } =
+    reserveSupportRateLimit(rateLimitKeys)
+  if (!allowed || !reservationToken) {
     return NextResponse.json(
       { error: RATE_LIMIT_ERROR_MESSAGE },
       {
@@ -182,6 +206,7 @@ export async function POST(request: NextRequest) {
     /[\r\n]/.test(supportToEmail) ||
     !EMAIL_REGEX.test(supportToEmail)
   ) {
+    releaseSupportRateLimit(rateLimitKeys, reservationToken)
     console.error('[Support API] Support email configuration is missing or invalid.')
     return NextResponse.json(
       { error: 'Support service is temporarily unavailable. Please try again later.' },
@@ -235,6 +260,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!resendResponse.ok) {
+      releaseSupportRateLimit(rateLimitKeys, reservationToken)
       console.error('[Support API] Resend rejected email dispatch:', resendResponse.status)
       return NextResponse.json(
         { error: 'Could not send your report right now. Please try again later.' },
@@ -242,6 +268,7 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (err) {
+    releaseSupportRateLimit(rateLimitKeys, reservationToken)
     console.error(
       '[Support API] Resend dispatch error:',
       err instanceof Error ? err.name : 'UnknownError'
@@ -252,10 +279,8 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  recordSupportRateLimit(recordKeys)
-
   const response = NextResponse.json({ success: true }, { status: 200 })
-  response.cookies.set(SUPPORT_DEVICE_COOKIE_NAME, deviceId, {
+  response.cookies.set(SUPPORT_DEVICE_COOKIE_NAME, signSupportDeviceId(deviceId), {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',

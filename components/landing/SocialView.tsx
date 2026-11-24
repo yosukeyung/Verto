@@ -9,10 +9,12 @@ import {
   sanitizeProfileAvatarId,
 } from '@/lib/url-validation'
 import { AvatarWithLightbox } from '@/components/ui/AvatarWithLightbox'
+import { TagBackground } from '@/components/landing/TagBackground'
 
 export interface SocialViewProps {
   metadata: Partial<SocialMetadata> & Record<string, any>
   avatarId?: string | null
+  expectedUserId?: string
   className?: string
   isPreview?: boolean
 }
@@ -67,20 +69,33 @@ function LinkedinIcon({
   )
 }
 
-export function SocialView({ metadata, avatarId, className, isPreview = false }: SocialViewProps) {
+export function SocialView({
+  metadata,
+  avatarId,
+  expectedUserId,
+  className,
+  isPreview = false,
+}: SocialViewProps) {
   const { name, bio, wa, ig, linkedin } = metadata
-  const { fontClass, accent, isDark } = resolveTagTheme(metadata)
+  const { fontClass, accent, isDark, background } = resolveTagTheme(metadata)
   const effectiveColor = accent.hex
 
+  const avatarValidationOpts = {
+    allowBlob: isPreview,
+    expectedUserId: isPreview ? undefined : expectedUserId,
+  }
   const validatedAvatarInput =
-    sanitizeProfileAvatarId(avatarId, { allowBlob: isPreview }) ??
-    sanitizeProfileAvatarId(metadata.avatar_id, { allowBlob: isPreview }) ??
-    sanitizeProfileAvatarId(metadata.avatar_url, { allowBlob: isPreview }) ??
+    sanitizeProfileAvatarId(avatarId, avatarValidationOpts) ??
+    sanitizeProfileAvatarId(metadata.avatar_id, avatarValidationOpts) ??
+    sanitizeProfileAvatarId(metadata.avatar_url, avatarValidationOpts) ??
     'love'
   const avatarSrc = getAvatarSrc(validatedAvatarInput, { allowBlob: isPreview })
   const isCustomAvatar = isCustomAvatarUrl(avatarSrc, { allowBlob: isPreview })
-  const displayName = name?.trim() || (isPreview ? 'Your Full Name' : 'Verto User')
-  const displayBio = bio?.trim() || (isPreview ? 'Add a brief bio or headline here' : '')
+  const displayName =
+    (typeof name === 'string' ? name.trim() : '') || (isPreview ? 'Your Full Name' : 'Verto User')
+  const displayBio =
+    (typeof bio === 'string' ? bio.trim() : '') ||
+    (isPreview ? 'Add a brief bio or headline here' : '')
 
   // In live preview mode, provide realistic sample links if user has not entered any yet
   const showFallbackLinks = isPreview && !wa && !ig && !linkedin
@@ -128,14 +143,25 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
 
   return (
     <main
-      className={`flex flex-col justify-between transition-colors duration-150 ${
-        isDark ? 'bg-neutral-900 text-white' : 'bg-white text-gray-900'
+      className={`relative isolate w-full flex flex-col justify-between transition-colors duration-150 ${
+        isDark ? 'text-white' : 'text-gray-900'
       } ${
-        isPreview ? 'pt-10 pb-6 px-4' : 'h-dvh overflow-hidden overscroll-none px-4 py-5 sm:py-10'
+        isPreview
+          ? 'min-h-full pt-10 pb-6 px-4'
+          : 'h-dvh overflow-hidden overscroll-none px-4 py-5 sm:py-10'
       } ${className || ''} ${fontClass} ${isPreview ? 'pointer-events-none select-none' : ''}`}
-      style={{ '--theme-accent': effectiveColor } as React.CSSProperties}
+      style={
+        {
+          '--theme-accent': effectiveColor,
+          '--tag-btn-bg': background.buttonBg,
+          '--tag-btn-bg-hover': background.buttonHoverBg,
+          '--tag-btn-border': background.buttonBorder,
+        } as React.CSSProperties
+      }
     >
-      <div className="w-full max-w-[400px] mx-auto flex-1 min-h-0 flex flex-col justify-center text-center">
+      <TagBackground background={background} />
+
+      <div className="relative z-10 w-full max-w-[400px] mx-auto flex-1 min-h-0 flex flex-col justify-center text-center">
         {/* Personal Profile Header */}
         <div className="mb-4 sm:mb-8">
           <AvatarWithLightbox
@@ -182,10 +208,10 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-full h-11 px-4 sm:px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                className={`w-full h-11 px-4 sm:px-5 rounded-lg border text-sm font-medium transition-colors duration-150 inline-flex items-center justify-between backdrop-blur-[6px] shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-[var(--tag-btn-border)] bg-[var(--tag-btn-bg)] hover:bg-[var(--tag-btn-bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 ${
                   isDark
-                    ? 'border-neutral-800 bg-neutral-900/80 text-white hover:bg-neutral-800 focus-visible:outline-white'
-                    : 'border-gray-200 bg-white text-gray-900 hover:bg-gray-50 focus-visible:outline-gray-900'
+                    ? 'text-white focus-visible:outline-white'
+                    : 'text-gray-900 focus-visible:outline-gray-900'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -193,7 +219,7 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
                   <span className="truncate">{item.label}</span>
                 </div>
                 <ExternalLink
-                  className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}
+                  className={`w-4 h-4 shrink-0 ${isDark ? 'text-neutral-300' : 'text-gray-600'}`}
                   strokeWidth={1.75}
                 />
               </a>
@@ -202,8 +228,8 @@ export function SocialView({ metadata, avatarId, className, isPreview = false }:
         )}
       </div>
 
-      <footer className="text-center pt-4 sm:pt-8 shrink-0">
-        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>
+      <footer className="relative z-10 text-center pt-4 sm:pt-8 shrink-0">
+        <p className={`text-xs tracking-wide ${isDark ? 'text-neutral-400' : 'text-gray-600'}`}>
           Powered by Verto
         </p>
       </footer>

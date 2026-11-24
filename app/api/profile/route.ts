@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { isTrustedRequestOrigin } from '@/lib/request-origin'
 import { isStaticAvatarId, sanitizeProfileAvatarId } from '@/lib/url-validation'
 
 export const dynamic = 'force-dynamic'
@@ -40,6 +41,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!isTrustedRequestOrigin(request)) {
+    return NextResponse.json(
+      { error: 'Forbidden request origin.' },
+      { status: 403 }
+    )
+  }
+
   const supabase = await createClient()
   const {
     data: { user },

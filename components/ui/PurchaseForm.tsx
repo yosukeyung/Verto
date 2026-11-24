@@ -36,7 +36,7 @@ export const PurchaseForm: React.FC<PurchaseFormProps> = ({
 
     // Open WhatsApp in a new tab
     if (typeof window !== 'undefined') {
-      window.open(whatsappUrl, '_blank')
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
     }
 
     setTimeout(() => {
