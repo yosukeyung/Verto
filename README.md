@@ -8,8 +8,8 @@
 
 > **One physical NFC tag, three switchable digital modes.** Share your socials, protect everyday belongings, or host event links straight in any phone browser with zero app downloads.
 
-- 🌐 **Live Deployment:** : ["Verto"](https://verto.vercel.app)
-- 🎬 **Promotional Video:** ["Promotional Video"]https://youtu.be/w70QcK9f5oE?si=yXmYmYmYmYmYmYmY
+- 🌐 **Live Deployment:** [Click here!](https://verto-tag.vercel.app)
+- 🎬 **Promotional Video:** [Watch here!]()
 
 ---
 
@@ -55,11 +55,11 @@ flowchart TD
     A["1. Tag Encoding: Admin writes unique /t/id link to NTAG213 chip and locks it"] --> B["2. Claim & Customize: Owner taps unclaimed tag, signs up, and picks a mode in Dashboard"]
     B --> C["3. Tap & Instant Page: Smartphone taps tag and requests /t/id"]
     C --> D{"Server checks tag status"}
-    D -->|"Unclaimed"| B
-    D -->|"Claimed"| E{"Active Mode"}
-    E -->|"Social"| F["Social Profile Card"]
-    E -->|"Lost & Found"| G["Safe Recovery Card + WhatsApp CTA"]
-    E -->|"Event Hub"| H["Event Details + Custom Links"]
+    D -->|Unclaimed| B
+    D -->|Claimed| E{"Active Mode"}
+    E -->|Social| F["Social Profile Card"]
+    E -->|Lost & Found| G["Safe Recovery Card + WhatsApp CTA"]
+    E -->|Event Hub| H["Event Details + Custom Links"]
 ```
 
 ---
