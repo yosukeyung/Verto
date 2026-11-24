@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { LoadingNavLink } from '@/components/ui/NavigationLoading'
 
 interface FooterProps {
   className?: string
@@ -18,12 +18,12 @@ export function Footer({
           &copy; {new Date().getFullYear()} Verto.
         </p>
 
-        <Link
+        <LoadingNavLink
           href={supportHref}
           className="relative inline-flex items-center whitespace-nowrap py-1.5 text-right text-gray-600 dark:text-neutral-400 transition-colors duration-150 hover:text-orange-600 dark:hover:text-orange-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 rounded before:absolute before:-inset-y-2 before:-inset-x-1"
         >
           Need help? Contact Support
-        </Link>
+        </LoadingNavLink>
       </div>
     </footer>
   )

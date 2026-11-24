@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { LoadingNavLink } from '@/components/ui/NavigationLoading'
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Navbar } from '@/components/layout/Navbar'
@@ -148,7 +148,7 @@ function LoginForm({ tagId }: { tagId: string | null }) {
 
           <p className="text-center text-sm text-gray-600 mt-6">
             Need help?{' '}
-            <Link
+            <LoadingNavLink
               href={
                 tagId
                   ? `/support?from=${encodeURIComponent(`/login?tag_id=${encodeURIComponent(tagId)}`)}`
@@ -157,7 +157,7 @@ function LoginForm({ tagId }: { tagId: string | null }) {
               className="inline-flex items-center min-h-11 px-1 text-orange-600 hover:underline font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 rounded"
             >
               Contact Support
-            </Link>
+            </LoadingNavLink>
           </p>
         </div>
       </main>

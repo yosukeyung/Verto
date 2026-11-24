@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { LoadingNavLink } from '@/components/ui/NavigationLoading'
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { TAG_LABEL_MAX_LENGTH } from '@/lib/tag-label'
@@ -274,7 +275,7 @@ function RegisterForm({ tagId }: { tagId: string }) {
 
           <p className="text-center text-sm text-gray-600 mt-2">
             Need help?{' '}
-            <Link
+            <LoadingNavLink
               href={
                 tagId
                   ? `/support?from=${encodeURIComponent(`/register?tag_id=${encodeURIComponent(tagId)}`)}`
@@ -283,7 +284,7 @@ function RegisterForm({ tagId }: { tagId: string }) {
               className="inline-flex items-center min-h-11 px-1 text-orange-600 hover:underline font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-500 rounded"
             >
               Contact Support
-            </Link>
+            </LoadingNavLink>
           </p>
         </div>
       </main>
